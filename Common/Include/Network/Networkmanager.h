@@ -1,6 +1,8 @@
 #pragma once
 #include <string>
 #include <thread>
+#include <functional>
+
 #define NOMINMAX
 #include <winsock2.h>
 #include <MSWSock.h>
@@ -23,24 +25,38 @@ namespace Network
 		HANDLE _handle = INVALID_HANDLE_VALUE;
 		LPFN_ACCEPTEX _acceptExPointer = nullptr;
 
-	public:
-		void Construct(int serverPort, int threadCount);
-		void OverlappedQueueSetting(int overlappedCount);
-		void PrepareSocket(int acceptReadyCount, int threadCount);
-		void Activate();
-
-	public:
-		ULONG_PTR RequestAccept();
-		void RequestSend(ULONG_PTR socketPtr, const MessageHeader header, std::string& stringBuffer, int& bodySize);
-
 	private:
-		void ReceiveReady(ULONG_PTR socketPtr);
-		void ProcessSend(SOCKET* targetSocket, const MessageHeader header, std::string& stringBuffer, int& bodySize);
+		int _preCreateSocketCount = 0;
+		int _acceptedSocketMax = 0;
+		int _threadCount = 0;
+		int _overlappedQueueMax = 0;
+
+	public:
+		void Construct(int serverPort, int threadCount, int preCreateSocketCount, int acceptSocketMax, int overlappedQueueMax, std::function<void(ULONG_PTR socketPtr, Network::OperationType, Network::CustomOverlapped*)> messageCallback);
 
 	private:
 		Utility::LockFreeCircleQueue<Network::CustomOverlapped*> _overlappedQueue;
 		Utility::LockFreeCircleQueue<SOCKET*> _preparedSocketQueue;
 		tbb::concurrent_map<ULONG_PTR, SOCKET*> _acceptedSocketMap;
+
+	private:
+		void OverlappedQueueSetting();
+		void PrepareSocket();
+		void RequestNewAccept();
+
+	public:
+		void RequestSend(ULONG_PTR socketPtr, const MessageHeader header, std::string& stringBuffer, int& bodySize);
+
+	private:
+		void ReceiveReady(ULONG_PTR socketPtr);
+		void Disconnect(ULONG_PTR socketPtr);
+		void ProcessSend(SOCKET* targetSocket, const MessageHeader header, std::string& stringBuffer, int& bodySize);
+
+	private:
+		std::function<void(ULONG_PTR socketPtr, Network::OperationType, Network::CustomOverlapped*)> _messageCallback;
+
+	public:
+		void ReturnOverlapped(Network::CustomOverlapped* customOverlapped);
 
 	private:
 		bool _networkOn;

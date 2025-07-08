@@ -1,10 +1,10 @@
 #pragma once
 #include <iostream>
-#include "../Network/Networkmanager.h"
+#include "Business/ServerControlCenter.h"
 
 int main()
 {
-	Network::NetworkManager networkManager;
-
-
+	Business::ServerControlCenter controlCenter;
+	controlCenter.Initialize(1, 1, 1, 1, 1);
+	controlCenter.MainProcess();
 }

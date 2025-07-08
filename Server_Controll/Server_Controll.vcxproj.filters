@@ -11,6 +11,12 @@
     <ClCompile Include="..\Common\Src\Network\Worker.cpp">
       <Filter>Network</Filter>
     </ClCompile>
+    <ClCompile Include="Src\Business\ServerControlCenter.cpp">
+      <Filter>Business</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Business\LobbyServer.cpp">
+      <Filter>Business</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Network">
@@ -18,6 +24,9 @@
     </Filter>
     <Filter Include="Utility">
       <UniqueIdentifier>{4d3852b6-f3ee-46d2-8487-d66d361286db}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Business">
+      <UniqueIdentifier>{e31fa63c-6cb6-4446-a9e7-fa599234a9cc}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -32,6 +41,18 @@
     </ClInclude>
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h">
       <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Business\ServerControlCenter.h">
+      <Filter>Business</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Business\Job.h">
+      <Filter>Business</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Utility\Debug.h">
+      <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Business\LobbyServer.h">
+      <Filter>Business</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

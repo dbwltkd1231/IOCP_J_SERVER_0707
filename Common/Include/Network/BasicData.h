@@ -10,6 +10,7 @@ namespace Network
         OP_ACCEPT = 1,
         OP_RECV = 2,
         OP_SEND = 3,
+        OP_DISCONNECT = 4
     };
 
     struct MessageHeader
@@ -44,6 +45,7 @@ namespace Network
         void AcceptSetting(ULONG_PTR socketPtr);
         void ReceiveSetting();
         void SendSetting(const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen); // send Àü¿ë.
+        OperationType GetOperation() const;
         void Clear();
     };
 }

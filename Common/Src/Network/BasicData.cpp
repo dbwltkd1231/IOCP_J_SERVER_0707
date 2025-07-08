@@ -86,6 +86,11 @@ namespace Network
 		_operationType = Network::OperationType::OP_RECV;
 	}
 
+	OperationType CustomOverlapped::GetOperation() const
+	{
+		return _operationType;
+	}
+
 	void CustomOverlapped::Clear()
 	{
 		memset(Wsabuf[0].buf, 0, sizeof(MessageHeader));
