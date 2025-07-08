@@ -138,6 +138,7 @@
     <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
     <ClCompile Include="..\Common\Src\Network\Worker.cpp" />
+    <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\Business\LobbyServer.cpp" />
     <ClCompile Include="Src\Business\ServerControlCenter.cpp" />

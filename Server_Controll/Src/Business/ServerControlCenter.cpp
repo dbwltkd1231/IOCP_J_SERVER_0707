@@ -1,3 +1,4 @@
+#pragma once
 #include <iostream>
 #include "Business/ServerControlCenter.h"
 #include "../Utility/Debug.h"
@@ -28,11 +29,11 @@ namespace Business
 		_networkManager.Construct(serverPort, threadCount, preCreateSocketCount, acceptSocketMax, overlappedQueueMax, _messageCallback);
 
 		std::string log =
-			" - ServerPort          : " + std::to_string(serverPort) + " " +
-			" - ThreadCount         : " + std::to_string(threadCount) + " " +
-			" - PreCreateSocketCount: " + std::to_string(preCreateSocketCount) + " " +
-			" - AcceptSocketMax     : " + std::to_string(acceptSocketMax) + " " +
-			" - OverlappedQueueMax  : " + std::to_string(overlappedQueueMax);
+			" - ServerPort : " + std::to_string(serverPort) + " " +
+			" - ThreadCount : " + std::to_string(threadCount) + " " +
+			" - PreCreateSocketCount : " + std::to_string(preCreateSocketCount) + " " +
+			" - AcceptSocketMax : " + std::to_string(acceptSocketMax) + " " +
+			" - OverlappedQueueMax : " + std::to_string(overlappedQueueMax);
 		Utility::Log("Server_Control", "Server", "Initialize", log);
 	}
 

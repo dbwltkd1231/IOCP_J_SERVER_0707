@@ -17,6 +17,9 @@
     <ClCompile Include="Src\Business\LobbyServer.cpp">
       <Filter>Business</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\Src\Utility\Debug.cpp">
+      <Filter>Utility</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Network">
