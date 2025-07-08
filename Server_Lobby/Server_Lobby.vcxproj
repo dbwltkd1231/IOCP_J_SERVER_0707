@@ -18,11 +18,29 @@
       <Platform>x64</Platform>
     </ProjectConfiguration>
   </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
+    <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
+    <ClCompile Include="..\Common\Src\Network\Worker.cpp" />
+    <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
+    <ClCompile Include="main.cpp" />
+    <ClCompile Include="Src\Job.cpp" />
+    <ClCompile Include="Src\LobbyServer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\Common\Include\Network\BasicData.h" />
+    <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
+    <ClInclude Include="..\Common\Include\Network\Worker.h" />
+    <ClInclude Include="..\Common\Include\Utility\Debug.h" />
+    <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />
+    <ClInclude Include="Include\Job.h" />
+    <ClInclude Include="Include\LobbyServer.h" />
+  </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
     <Keyword>Win32Proj</Keyword>
-    <ProjectGuid>{f8f83835-cf62-4c3e-854a-4313da7543f0}</ProjectGuid>
-    <RootNamespace>ServerControll</RootNamespace>
+    <ProjectGuid>{ff4d9d11-215b-4105-8716-b448450c930d}</ProjectGuid>
+    <RootNamespace>ServerLobby</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -109,12 +127,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDir)Common\Include\Network;$(SolutionDir)Common\Include\Utility;$(SolutionDir)Common\Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Common\Include\Network;$(ProjectDir)Include;$(SolutionDir)Common\Include\Utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Network;$(SolutionDir)Common\Src\Utility;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Utility;$(SolutionDir)Common\Src\Network;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
@@ -134,26 +152,6 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
   </ItemDefinitionGroup>
-  <ItemGroup>
-    <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
-    <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
-    <ClCompile Include="..\Common\Src\Network\Worker.cpp" />
-    <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
-    <ClCompile Include="main.cpp" />
-    <ClCompile Include="Src\Business\LobbyServer.cpp" />
-    <ClCompile Include="Src\Business\ControlServer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="..\Common\Include\Network\BasicData.h" />
-    <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
-    <ClInclude Include="..\Common\Include\Network\Worker.h" />
-    <ClInclude Include="..\Common\Include\Utility\ConfigCreator.h" />
-    <ClInclude Include="..\Common\Include\Utility\Debug.h" />
-    <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />
-    <ClInclude Include="Include\Business\Job.h" />
-    <ClInclude Include="Include\Business\LobbyServer.h" />
-    <ClInclude Include="Include\Business\ControlServer.h" />
-  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

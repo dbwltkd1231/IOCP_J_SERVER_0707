@@ -7,6 +7,7 @@
 #include <winsock2.h>
 #include <MSWSock.h>
 #include <windows.h>
+#include <ws2tcpip.h>
 
 #include "oneapi/tbb/concurrent_map.h"
 #include "../Utility/LockFreeCircleQueue.h"
@@ -63,5 +64,12 @@ namespace Network
 
 	private:
 		void Process();
+
+	public:
+		void ConnectToControlServer(std::string targetServerIp, int targetServerPort);
+
+	private:
+		SOCKET* _controlServerSocket;
+
 	};
 }

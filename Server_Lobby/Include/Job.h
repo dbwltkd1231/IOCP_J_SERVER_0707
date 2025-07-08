@@ -1,7 +1,7 @@
 #pragma once
 #include "../Network/BasicData.h"
 
-namespace Control
+namespace Lobby
 {
 	struct Job
 	{

@@ -1,0 +1,26 @@
+{
+    "ControlServer": {
+        "AcceptSocketMax": 30,
+        "IP": "127.0.0.1",
+        "OverlappedQueueSizemax": 100,
+        "Port": 9090,
+        "PreCreateSocketCount": 10,
+        "ThreadCount": 10
+    },
+    "LobbyServer": {
+        "AcceptSocketMax": 30,
+        "Keys": [
+            "Lobby1",
+            "Lobby2",
+            "Lobby3"
+        ],
+        "OverlappedQueueSizemax": 100,
+        "Ports": [
+            9091,
+            9092,
+            9093
+        ],
+        "PreCreateSocketCount": 10,
+        "ThreadCount": 10
+    }
+}

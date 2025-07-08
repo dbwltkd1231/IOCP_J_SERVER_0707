@@ -10,7 +10,8 @@ namespace Network
         OP_ACCEPT = 1,
         OP_RECV = 2,
         OP_SEND = 3,
-        OP_DISCONNECT = 4
+        OP_DISCONNECT = 4,
+        OP_CONNECT = 5
     };
 
     struct MessageHeader
@@ -42,6 +43,7 @@ namespace Network
         ULONG_PTR _socketPtr;
 
     public:
+        void ConnectSetting(ULONG_PTR socketPtr);
         void AcceptSetting(ULONG_PTR socketPtr);
         void ReceiveSetting();
         void SendSetting(const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen); // send Àü¿ë.

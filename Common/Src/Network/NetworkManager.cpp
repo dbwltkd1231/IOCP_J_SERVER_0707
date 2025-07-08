@@ -6,12 +6,14 @@ namespace Network
 {
 	NetworkManager::NetworkManager()
 	{
+		_controlServerSocket = nullptr;
 		_networkOn = false;
 		_messageCallback = nullptr;
 	}
 
 	NetworkManager::~NetworkManager()
 	{
+		_controlServerSocket = nullptr;
 		_networkOn = false;
 		_messageCallback = nullptr;
 	}
@@ -94,6 +96,12 @@ namespace Network
 		_preparedSocketQueue.Construct(_preCreateSocketCount);
 		OverlappedQueueSetting();
 		PrepareSocket();
+
+		for (int index = 0;index < _preCreateSocketCount; ++index)
+		{
+			RequestNewAccept();
+		}
+
 		Utility::Log("Server_Controll", "NetworkManager", "Construct", "Completed");
 	}
 
@@ -295,6 +303,10 @@ namespace Network
 
 				switch (overlapped->GetOperation())
 				{
+					case OperationType::OP_CONNECT:
+					{
+						ReceiveReady(completionKey);
+					}
 					case OperationType::OP_ACCEPT:
 					{
 						if (_acceptedSocketMap.size() < _acceptedSocketMax)
@@ -345,4 +357,79 @@ namespace Network
 		}
 	}
 
+
+	void NetworkManager::ConnectToControlServer(std::string targetServerIp, int targetServerPort)
+	{
+		SOCKET newSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
+		_controlServerSocket = new SOCKET(newSocket);
+
+		DWORD bytes;
+		LPFN_CONNECTEX connectEx = NULL;
+		GUID connectExGuid = WSAID_CONNECTEX;
+		sockaddr_in serverAddr;
+		sockaddr_in localAddr;
+
+		// ConnectEx 함수 포인터 가져오기
+		if (WSAIoctl(*_controlServerSocket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+			&connectExGuid, sizeof(connectExGuid),
+			&connectEx, sizeof(connectEx),
+			&bytes, NULL, NULL))
+		{
+			//Utility::LogError("Client", "ClientManager", "WSAIoctl 실패: " + std::to_string(WSAGetLastError()));
+			closesocket(*_controlServerSocket);
+			return;
+		}
+
+		// 서버 주소 설정
+		serverAddr = { 0 };
+		serverAddr.sin_family = AF_INET;
+		serverAddr.sin_port = htons(targetServerPort);
+		inet_pton(AF_INET, targetServerIp.c_str(), &serverAddr.sin_addr);
+
+		// 로컬 주소 바인딩
+		localAddr = { 0 };
+		localAddr.sin_family = AF_INET;
+		localAddr.sin_addr.s_addr = INADDR_ANY;
+		localAddr.sin_port = 0;  // 자동 할당
+
+		if (bind(*_controlServerSocket, (sockaddr*)&localAddr, sizeof(localAddr)) == SOCKET_ERROR)
+		{
+			//Utility::LogError("Client", "ClientManager", "클라이언트 bind 실패: " + std::to_string(WSAGetLastError()));
+			closesocket(*_controlServerSocket);
+			return;
+		}
+
+		auto socketKey = (ULONG_PTR)_controlServerSocket;
+		//_clientMap.insert(std::make_pair(ulongPtr, targetClient));
+
+		CreateIoCompletionPort((HANDLE)*_controlServerSocket, _handle, socketKey, _threadCount);
+
+		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
+		targetOverlapped->Clear();
+		targetOverlapped->ConnectSetting(socketKey);
+
+		BOOL result = connectEx(*_controlServerSocket, (sockaddr*)&serverAddr, sizeof(serverAddr), NULL, 0, NULL, &*targetOverlapped);
+
+		if (!result)
+		{
+			int errorCode = WSAGetLastError();
+			if (errorCode != WSA_IO_PENDING)
+			{
+				Utility::Log("???", "Network", "Client", "ConnectEx 실패! 오류 코드: " + std::to_string(errorCode));
+
+				// 소켓을 안전하게 닫고 정리
+				if (*_controlServerSocket != INVALID_SOCKET)
+				{
+					closesocket(*_controlServerSocket);
+					*_controlServerSocket = INVALID_SOCKET;
+				}
+				WSACleanup();
+				return;
+			}
+		}
+
+		_acceptedSocketMap.insert(std::make_pair(socketKey, _controlServerSocket));
+		Utility::Log("??", "NetworkManager", "ConnectToControlServer", "Completed");
+
+	}
 }

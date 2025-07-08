@@ -1,22 +1,22 @@
 #pragma once
-#include <thread>
 #include "../Network/Networkmanager.h"
-#include "Business/Job.h"
+#include "Job.h"
 
-namespace Business
+namespace Lobby
 {
-	class ServerControlCenter
+	class LobbyServer
 	{
 	public:
-		ServerControlCenter();
-		~ServerControlCenter();
+		LobbyServer();
+		~LobbyServer();
 
 	public:
-		void Initialize(int serverPort, int threadCount, int preCreateSocketCount, int acceptSocketMax, int overlappedQueueMax);
+		void Initialize(std::string serverKey, int serverPort, int threadCount, int preCreateSocketCount, int acceptSocketMax, int overlappedQueueMax, std::string targetServerIp, int targetServerPort);
 		void MainProcess();
 		void JobThread();
 
 	private:
+		std::string _serverKey;
 		bool _isServerOn;
 
 	private:
@@ -26,9 +26,11 @@ namespace Business
 		void EnqueueJob(ULONG_PTR socketPtr, Network::OperationType operationType, Network::CustomOverlapped* customOverlapped);
 
 	private:
-		Utility::LockFreeCircleQueue<std::shared_ptr<Business::Job>> _jobQueue;
+		Utility::LockFreeCircleQueue<std::shared_ptr<Lobby::Job>> _jobQueue;
 
 	private:
 		Network::NetworkManager _networkManager;
 	};
+
+	
 }

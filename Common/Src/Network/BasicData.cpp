@@ -60,6 +60,12 @@ namespace Network
 
 	}
 
+	void CustomOverlapped::ConnectSetting(ULONG_PTR socketPtr)
+	{
+		_operationType = Network::OperationType::OP_CONNECT;
+		_socketPtr = socketPtr;
+	}
+
 	void CustomOverlapped::AcceptSetting(ULONG_PTR socketPtr)
 	{
 		_operationType = Network::OperationType::OP_ACCEPT;
