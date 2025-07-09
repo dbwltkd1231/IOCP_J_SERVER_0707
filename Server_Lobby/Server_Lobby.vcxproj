@@ -21,20 +21,16 @@
   <ItemGroup>
     <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
-    <ClCompile Include="..\Common\Src\Network\Worker.cpp" />
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Src\Job.cpp" />
-    <ClCompile Include="Src\LobbyServer.cpp" />
+    <ClCompile Include="Src\Hub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Include\Network\BasicData.h" />
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
-    <ClInclude Include="..\Common\Include\Network\Worker.h" />
     <ClInclude Include="..\Common\Include\Utility\Debug.h" />
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />
-    <ClInclude Include="Include\Job.h" />
-    <ClInclude Include="Include\LobbyServer.h" />
+    <ClInclude Include="Include\Hub.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

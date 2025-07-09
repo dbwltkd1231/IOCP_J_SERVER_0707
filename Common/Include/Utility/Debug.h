@@ -5,5 +5,5 @@
 
 namespace Utility
 {
-	void Log(const std::string projectName, const std::string scriptName, const std::string funcName, const std::string log);
+	void Log(const std::string scriptName, const std::string funcName, const std::string log);
 }

@@ -6,194 +6,271 @@ namespace Network
 {
 	NetworkManager::NetworkManager()
 	{
-		_controlServerSocket = nullptr;
-		_networkOn = false;
-		_messageCallback = nullptr;
+		_isOn = false;
 	}
 
 	NetworkManager::~NetworkManager()
 	{
-		_controlServerSocket = nullptr;
-		_networkOn = false;
-		_messageCallback = nullptr;
+		_isOn = false;
 	}
 
-	void NetworkManager::Construct(int serverPort, int threadCount, int preCreateSocketCount, int acceptSocketMax, int overlappedQueueMax, std::function<void(ULONG_PTR socketPtr, Network::OperationType, Network::CustomOverlapped*)> messageCallback)
+	void NetworkManager::Construct(int overlappedQueueMax)
 	{
-		_threadCount = threadCount;
-		_preCreateSocketCount = preCreateSocketCount;
-		_acceptedSocketMax = acceptSocketMax;
-		_overlappedQueueMax = overlappedQueueMax;
-		_messageCallback = messageCallback;
-
-		WSADATA wsaData;
-		if (WSAStartup(MAKEWORD(2, 2), &wsaData) != 0)
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "WSAStartup failed");
-			return;
-		}
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "WSAStartup Success");
-
-		_listenSocket = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
-		if (_listenSocket == INVALID_SOCKET)
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "Listen Socket Create Fail");
-			WSACleanup();
-			return;
-		}
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "Listen Socket Create Success");
-
-		sockaddr_in serverAddr{};
-		serverAddr.sin_family = AF_INET;
-		serverAddr.sin_addr.s_addr = INADDR_ANY;
-		serverAddr.sin_port = htons(serverPort);
-		if (bind(_listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr)) == SOCKET_ERROR)
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "Listen Socket Bind Fail");
-			closesocket(_listenSocket);
-			WSACleanup();
-			return;
-		}
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "Listen Socket Bind Success");
-
-		//Utility::Log("Network", "IOCP", "bind success");
-		if (listen(_listenSocket, SOMAXCONN) == SOCKET_ERROR)
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "Listen Socket Listen Fail");
-			closesocket(_listenSocket);
-			WSACleanup();
-			return;
-		}
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "Listen Socket Listen Success");
-
-		_handle = CreateIoCompletionPort(INVALID_HANDLE_VALUE, NULL, 0, _threadCount);
-		if (_handle == NULL)
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "IOCP Handle Create Fail");
-			closesocket(_listenSocket);
-			WSACleanup();
-			return;
-		}
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "IOCP Handle Create Success");
-
-		if (!CreateIoCompletionPort((HANDLE)_listenSocket, _handle, 0, _threadCount))
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "IOCP Handle - ListenSocket Connect Fail");
-			closesocket(_listenSocket);
-			WSACleanup();
-			return;
-		}
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "CreateIoCompletionPort Success");
-
-		GUID guidAcceptEx = WSAID_ACCEPTEX;
-		DWORD bytesReceived;
-		if (WSAIoctl(_listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &guidAcceptEx, sizeof(guidAcceptEx), &_acceptExPointer, sizeof(_acceptExPointer), &bytesReceived, NULL, NULL) == SOCKET_ERROR)
-		{
-			Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", "WSAIoctl failed");
-			return;
-		}
-
-		_preparedSocketQueue.Construct(_preCreateSocketCount);
-		OverlappedQueueSetting();
-		PrepareSocket();
-
-		for (int index = 0;index < _preCreateSocketCount; ++index)
-		{
-			RequestNewAccept();
-		}
-
-		Utility::Log("Server_Controll", "NetworkManager", "Construct", "Completed");
-	}
-
-	void NetworkManager::OverlappedQueueSetting()
-	{
-		_overlappedQueue.Construct(_overlappedQueueMax);
-		for (int i = 0;i < _overlappedQueueMax; ++i)
+		_overlappedQueue.Construct(overlappedQueueMax);
+		for (int i = 0;i < overlappedQueueMax; ++i)
 		{
 			auto overlapped = new CustomOverlapped();
 			_overlappedQueue.push(std::move(overlapped));
 		}
-
-		std::string log = "Overlapped객체풀 생성 : " + std::to_string(_overlappedQueueMax);
-		Utility::Log("Server_Controll", "NetworkManager", "OverlappedQueueSetting", log);
 	}
 
-	void NetworkManager::PrepareSocket()
+	void NetworkManager::SetupListenSocket(int serverPort, int prepareSocketMax, int iocpThreadCount)
 	{
-		for (int index = 0;index < _preCreateSocketCount; ++index)
+		_prepareSocketMax = prepareSocketMax;
+		_iocpThreadCount = iocpThreadCount;
+
+		WSADATA wsaData;
+		WSAStartup(MAKEWORD(2, 2), &wsaData);
+
+		SOCKET socket = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
+		_listenSocket = new SOCKET(socket);
+
+		sockaddr_in serverAddr{};
+		serverAddr.sin_family = AF_INET;
+		serverAddr.sin_port = htons(serverPort);
+		serverAddr.sin_addr.s_addr = htonl(INADDR_ANY);
+
+		bind(*_listenSocket, (sockaddr*)&serverAddr, sizeof(serverAddr));
+		listen(*_listenSocket, SOMAXCONN);
+
+		auto socketKey = (ULONG_PTR)_listenSocket;
+
+		_iocp = CreateIoCompletionPort(INVALID_HANDLE_VALUE, nullptr, 0, _iocpThreadCount);
+		CreateIoCompletionPort((HANDLE)*_listenSocket, _iocp, socketKey, _iocpThreadCount);
+
+		GUID guidAcceptEx = WSAID_ACCEPTEX;
+		DWORD bytesReceived;
+		if (WSAIoctl(*_listenSocket, SIO_GET_EXTENSION_FUNCTION_POINTER, &guidAcceptEx, sizeof(guidAcceptEx), &_acceptExPointer, sizeof(_acceptExPointer), &bytesReceived, NULL, NULL) == SOCKET_ERROR)
+		{
+			Utility::Log("NetworkManager", "SetupListenSocket", "WSAIoctl failed");
+			return;
+		}
+
+		_preparedSocketQueue.Construct(_prepareSocketMax);
+		FillSocketQueue();
+
+		Utility::Log("NetworkManager", "SetupListenSocket", "Completed !");
+
+	}
+
+	void NetworkManager::FillSocketQueue()
+	{
+		for (int i = 0;i < _prepareSocketMax;++i)
 		{
 			SOCKET newSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
 			SOCKET* socketPtr = new SOCKET(newSocket);
-			CreateIoCompletionPort((HANDLE)newSocket, _handle, (ULONG_PTR)socketPtr, _threadCount);
-
+			CreateIoCompletionPort((HANDLE)*socketPtr, _iocp, (ULONG_PTR)socketPtr, _iocpThreadCount);
 			_preparedSocketQueue.push(std::move(socketPtr));
-
 		}
-		
-		std::string log = "소켓 IOCP 연결 : " + std::to_string(_preCreateSocketCount);
-		Utility::Log("Server_Controll", "NetworkManager", "PrepareSocket", log);
+
+		Utility::Log("NetworkManager", "FillSocketQueue", "Completed !");
 	}
 
-	void NetworkManager::RequestNewAccept()
+	void NetworkManager::PrepareAcceptSocket()
 	{
-		std::string log = "";
-
 		if (_preparedSocketQueue.size() < 1)
 		{
-			PrepareSocket();//캐싱필요.
+			FillSocketQueue();
 		}
+
+		SOCKET* targetSocket = _preparedSocketQueue.pop();
 
 		int errorCode;
 		int errorCodeSize = sizeof(errorCode);
 
-		SOCKET* targetSocket = _preparedSocketQueue.pop();
 		getsockopt(*targetSocket, SOL_SOCKET, SO_ERROR, (char*)&errorCode, &errorCodeSize);
 		if (errorCode != 0)
 		{
-			log = "Getsockopt Fail : " + std::to_string(errorCode);
-			Utility::Log("Server_Controll", "NetworkManager", "RequestNewAccept", log);
+			std::string log = "Getsockopt 실패 : " + std::to_string(errorCode);
+			Utility::Log("NetworkManager", "PrepareAcceptSocket", log);
 			return;
 		}
 
 		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
 		targetOverlapped->Clear();
-		ULONG_PTR socketKey = (ULONG_PTR)targetSocket;
-		targetOverlapped->AcceptSetting(socketKey);
+		targetOverlapped->AcceptSetting((ULONG_PTR)targetSocket);
 
 		DWORD bytesReceived = 0;
-		bool result = _acceptExPointer(_listenSocket, *targetSocket, targetOverlapped->Wsabuf[1].buf, 0, sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16, &bytesReceived, (CustomOverlapped*)&(*targetOverlapped));
+		BOOL result = _acceptExPointer(
+			*_listenSocket, *targetSocket,
+			targetOverlapped->Wsabuf[1].buf, 0,
+			sizeof(sockaddr_in) + 16, sizeof(sockaddr_in) + 16,
+			&bytesReceived, (OVERLAPPED*)targetOverlapped
+		);
 
-		errorCode = WSAGetLastError();
-		if (result == SOCKET_ERROR && errorCode != WSA_IO_PENDING)
+		int lastError = WSAGetLastError();
+		if (result == FALSE && lastError != WSA_IO_PENDING)
 		{
-			log = "AcceptEx 실패! 오류 코드: " + std::to_string(errorCode);
+			std::string log = "AcceptEx 실패! 오류 코드: " + std::to_string(lastError);
+			Utility::Log("NetworkManager", "PrepareAcceptSocket", log);
 			return;
 		}
-		else
-		{
-			log = "클라이언트 AcceptEx 호출";
-		}
 
-		_acceptedSocketMap.insert(std::make_pair(socketKey, targetSocket));
-		Utility::Log("Server_Controll", "NetworkManager", "RequestNewAccept", log);
+		_preparedSocketMap.insert(std::make_pair((ULONG_PTR)targetSocket, targetSocket));
+		Utility::Log("PrepareAcceptSocket", "PrepareAcceptSocket", "AcceptEx 호출 성공");
 	}
 
-	void NetworkManager::ReceiveReady(ULONG_PTR socketPtr)
+	void NetworkManager::SetupConnectSocket(std::string targetServerIp, int targetServerPort)
 	{
-		auto finder = _acceptedSocketMap.find(socketPtr);
-		if (finder == _acceptedSocketMap.end())
-			return;
+		SOCKET socket = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
 
-		SOCKET* targetSocket = finder->second;
-		std::string log = "";
+		// 로컬 주소 바인딩
+		sockaddr_in  localAddr = { 0 };
+		localAddr.sin_family = AF_INET;
+		localAddr.sin_addr.s_addr = INADDR_ANY;
+		localAddr.sin_port = 0;  // 자동 할당
+
+		if (bind(socket, (sockaddr*)&localAddr, sizeof(localAddr)) == SOCKET_ERROR)
+		{
+			Utility::Log("NetworkManager", "SetupConnectSocket", "클라이언트 bind 실패");
+			closesocket(socket);
+			return;
+		}
+
+		_connectSocket = new SOCKET(socket);
+
+		GUID connectExGuid = WSAID_CONNECTEX;
+		LPFN_CONNECTEX connectEx = NULL;
+		DWORD bytes;
+		if (WSAIoctl(*_connectSocket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+			&connectExGuid, sizeof(connectExGuid),
+			&connectEx, sizeof(connectEx),
+			&bytes, NULL, NULL))
+		{
+			Utility::Log("NetworkManager", "SetupConnectSocket", "ConnectEx 가져오기 실패");
+			closesocket(*_connectSocket);
+			return;
+		}
+
+		sockaddr_in targetServerAddr{};
+		targetServerAddr.sin_family = AF_INET;
+		targetServerAddr.sin_port = htons(targetServerPort);
+		inet_pton(AF_INET, targetServerIp.c_str(), &targetServerAddr.sin_addr);
+
+		auto socketKey = (ULONG_PTR)_connectSocket;
+
+		CreateIoCompletionPort((HANDLE)*_connectSocket, _iocp, socketKey, _iocpThreadCount);
+
+		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
+		targetOverlapped->Clear();
+		targetOverlapped->ConnectSetting((ULONG_PTR)_connectSocket);
+
+		BOOL result = connectEx(*_connectSocket, (sockaddr*)&targetServerAddr, sizeof(targetServerAddr), nullptr, 0, nullptr, &*targetOverlapped);
+		int lastError = WSAGetLastError();
+		if (result == FALSE && lastError != WSA_IO_PENDING)
+		{
+			std::string log = "AcceptEx 실패! 오류 코드: " + std::to_string(lastError);
+			Utility::Log("NetworkManager", "SetupConnectSocket", log);
+			return;
+		}
+
+		Utility::Log("NetworkManager", "SetupConnectSocket", "Completed");
+	}
+
+	int NetworkManager::GetCurrentAcceptedSocket()
+	{
+		return _accpetCompletedSocketMap.size();
+	}
+
+	void NetworkManager::ProcessCompletionHandler()
+	{
+		_isOn = true;
+		CustomOverlapped* overlapped = nullptr;
+		DWORD bytesTransferred = 0;
+		ULONG_PTR completionKey = 0;
+		int errorCode = 0;
+
+		while (_isOn)
+		{
+			BOOL result = GetQueuedCompletionStatus(_iocp, &bytesTransferred, &completionKey, reinterpret_cast<LPOVERLAPPED*>(&overlapped), INFINITE);
+
+			if (!result)
+			{
+				errorCode = WSAGetLastError();
+				switch (errorCode)
+				{
+					case WSAECONNRESET:
+						HandleDisconnectComplete(completionKey, "WSAECONNRESET");
+						break;
+					case WSAECONNABORTED:
+						HandleDisconnectComplete(completionKey, "WSAECONNABORTED");
+						break;
+					case WSAENETRESET:
+						HandleDisconnectComplete(completionKey, "WSAENETRESET");
+						break;
+					case WSAETIMEDOUT:
+						HandleDisconnectComplete(completionKey, "WSAETIMEDOUT");
+						break;
+					case WSAENOTCONN:
+						HandleDisconnectComplete(completionKey, "WSAENOTCONN");
+						break;
+					case WSAESHUTDOWN:
+						HandleDisconnectComplete(completionKey, "WSAESHUTDOWN");
+						break;
+					case ERROR_NETNAME_DELETED:
+						HandleDisconnectComplete(completionKey, "ERROR_NETNAME_DELETED");
+						break;
+				}
+			}
+			else
+			{
+				switch (overlapped->GetOperation())
+				{
+					case OperationType::OP_CONNECT:
+					{
+						HandleConnectComplete();
+						break;
+					}
+					case OperationType::OP_ACCEPT:
+					{
+						HandleAcceptComplete(overlapped->GetKey()); //- AcceptEx() 완료 시 IOCP로 들어오는 이벤트에서 completionKey는 리슨 소켓의 키가 들어온다.
+
+						break;
+					}
+					case OperationType::OP_RECV:
+					{
+						HandleReceiveComplete(completionKey, overlapped, bytesTransferred);
+						break;
+					}
+					case OperationType::OP_SEND:
+					{
+						HandleSendComplete(completionKey, overlapped);
+						break;
+					}
+					case OperationType::OP_DEFAULT:
+					{
+						Utility::Log("NetworkManager", "ProcessCompletionHandler", "Default Type Message");
+						break;
+					}
+				}
+			}
+
+			overlapped->Clear();
+			_overlappedQueue.push(std::move(overlapped));
+		}
+	}
+
+
+	bool NetworkManager::CallReceiveReady(SOCKET* targetSocket)
+	{
 		int errorCode;
 		int errorCodeSize = sizeof(errorCode);
 		getsockopt(*targetSocket, SOL_SOCKET, SO_ERROR, (char*)&errorCode, &errorCodeSize);
 		if (errorCode != 0)
 		{
-			log = "Getsockopt Fail : " + std::to_string(errorCode);
-			Utility::Log("Server_Controll", "NetworkManager", "ReceiveReady", log);
-			return;
+			std::string log = "Getsockopt Fail : " + std::to_string(errorCode);
+			Utility::Log("NetworkManager", "ReceiveReady", log);
+			return false;
 		}
 
 		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
@@ -206,230 +283,123 @@ namespace Network
 		errorCode = WSAGetLastError();
 		if (result == SOCKET_ERROR && errorCode != WSA_IO_PENDING)
 		{
-			log = "WSARecv 실패! 오류 코드: " + std::to_string(errorCode);
+			std::string log = "WSARecv 실패! 오류 코드: " + std::to_string(errorCode);
+			Utility::Log("NetworkManager", "CallReceiveReady", log);
+			return false;
 		}
 		else
 		{
-			log = " 클라이언트 WSARecv 호출";
+			std::string log = " 클라이언트 WSARecv 호출";
+			Utility::Log("NetworkManager", "CallReceiveReady", log);
+			return true;
 		}
-
-		Utility::Log("Server_Controll", "NetworkManager", "ReceiveReady", log);
 	}
 
-	void NetworkManager::Disconnect(ULONG_PTR socketPtr)
-	{
-		auto finder = _acceptedSocketMap.find(socketPtr);
-		if (finder == _acceptedSocketMap.end())
-			return;
-
-		SOCKET* targetSocket = finder->second;
-
-		//TODO
-	}
-
-	void NetworkManager::RequestSend(ULONG_PTR socketPtr, const MessageHeader header, std::string& stringBuffer, int& bodySize)
-	{
-		auto finder = _acceptedSocketMap.find(socketPtr);
-		if (finder == _acceptedSocketMap.end())
-			return;
-
-		SOCKET* socket = finder->second;
-
-		ProcessSend(socket, header, stringBuffer, bodySize);
-	}
-
-	void NetworkManager::ProcessSend(SOCKET* targetSocket, const MessageHeader header, std::string& stringBuffer, int& bodySize)
+	bool NetworkManager::ProcessDisconnect(SOCKET* targetSocket)
 	{
 		if (targetSocket == nullptr || *targetSocket == INVALID_SOCKET)
+			return false;
+
+		if (shutdown(*targetSocket, SD_BOTH) == SOCKET_ERROR) 
 		{
-			//Utility::Log("Network", "Client", "Invalid Socket Pointer");
-			return;
+			int err = WSAGetLastError();
+			Utility::Log("ProcessDisconnect", "Shutdown 실패", std::to_string(err));
 		}
 
-		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
-		targetOverlapped->Clear();
+		closesocket(*targetSocket);
+		*targetSocket = INVALID_SOCKET;
 
-		targetOverlapped->SendSetting(header, stringBuffer.c_str(), bodySize);
-
-		DWORD flags = 0;
-		int result = WSASend(*targetSocket, targetOverlapped->Wsabuf, 2, nullptr, flags, &*targetOverlapped, nullptr);
-		int errorCode = WSAGetLastError();
-		if (result == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING)
-		{
-			std::string log = "WSASend 실패! 오류 코드: " + std::to_string(errorCode);
-			//Utility::Log("Network", "Client", log);
-			return;
-		}
-
-		//Utility::Log("Network", "Client", "클라이언트 WSASend 호출");
+		delete targetSocket;
+		return true;
 	}
 
-	void NetworkManager::ReturnOverlapped(Network::CustomOverlapped* customOverlapped)
+	void NetworkManager::HandleConnectComplete()
 	{
-		customOverlapped->Clear();
-		_overlappedQueue.push(std::move(customOverlapped));
-	}
-	
-	void NetworkManager::Process()
-	{
-		_networkOn = true;
-
-		CustomOverlapped* overlapped = nullptr;
-		DWORD bytesTransferred = 0;
-		ULONG_PTR completionKey = 0;
-
-
-		while (_networkOn)
+		if (_connectSocket == nullptr || *_connectSocket == INVALID_SOCKET)
 		{
-			BOOL result = GetQueuedCompletionStatus(_handle, &bytesTransferred, &completionKey, reinterpret_cast<LPOVERLAPPED*>(&overlapped), INFINITE);
-
-			if (!result)
-			{
-				int errorCode = WSAGetLastError();
-
-				switch (errorCode)
-				{
-					case WSAECONNRESET:
-					case WSAECONNABORTED:
-					case WSAENETRESET:
-					case WSAETIMEDOUT:
-					case WSAENOTCONN:
-					case WSAESHUTDOWN:
-					case ERROR_NETNAME_DELETED:
-						_messageCallback(completionKey, OperationType::OP_DISCONNECT, nullptr);
-						//Disconnect(completionKey);
-						break;
-				}
-
-				switch (overlapped->GetOperation())
-				{
-					case OperationType::OP_CONNECT:
-					{
-						ReceiveReady(completionKey);
-					}
-					case OperationType::OP_ACCEPT:
-					{
-						if (_acceptedSocketMap.size() < _acceptedSocketMax)
-						{
-							RequestNewAccept();
-						}
-
-						ReceiveReady(completionKey);
-						_messageCallback(completionKey, OperationType::OP_ACCEPT, nullptr);
-						break;
-					}
-					case OperationType::OP_RECV:
-					{
-						if (bytesTransferred <= 0)
-						{
-							_messageCallback(completionKey, OperationType::OP_DISCONNECT, overlapped);
-							//Disconnect(completionKey);
-							//_disconnectCallback(overlapped, completionKey, bytesTransferred, 0);
-						}
-
-					//// 여기서 풀링을하면 메모리를 새로생성해야함으로 오버헤드발생가능 -> 풀링은 따로 콜백을 받고, 여기서는 그대로 전달하자.
-					//MessageHeader* receivedHeader = reinterpret_cast<MessageHeader*>(overlapped->Wsabuf[0].buf);
-					//int requestBodySize = ntohl(receivedHeader->BodySize);
-					//uint32_t requestContentsType = ntohl(receivedHeader->ContentsType);
-					//
-					//std::string bufferString = std::string(overlapped->Wsabuf[1].buf, requestBodySize);
-		
-						_messageCallback(completionKey, OperationType::OP_RECV, overlapped);
-						
-						break;
-					}
-					case OperationType::OP_SEND:
-					{
-						_messageCallback(completionKey, OperationType::OP_SEND, overlapped);
-						break;
-					}
-					case OperationType::OP_DEFAULT:
-					{
-						_messageCallback(completionKey, OperationType::OP_DEFAULT, nullptr);
-						break;
-					}
-				}
-			}
-			else
-			{
-
-			}
-		}
-	}
-
-
-	void NetworkManager::ConnectToControlServer(std::string targetServerIp, int targetServerPort)
-	{
-		SOCKET newSocket = WSASocket(AF_INET, SOCK_STREAM, IPPROTO_TCP, NULL, 0, WSA_FLAG_OVERLAPPED);
-		_controlServerSocket = new SOCKET(newSocket);
-
-		DWORD bytes;
-		LPFN_CONNECTEX connectEx = NULL;
-		GUID connectExGuid = WSAID_CONNECTEX;
-		sockaddr_in serverAddr;
-		sockaddr_in localAddr;
-
-		// ConnectEx 함수 포인터 가져오기
-		if (WSAIoctl(*_controlServerSocket, SIO_GET_EXTENSION_FUNCTION_POINTER,
-			&connectExGuid, sizeof(connectExGuid),
-			&connectEx, sizeof(connectEx),
-			&bytes, NULL, NULL))
-		{
-			//Utility::LogError("Client", "ClientManager", "WSAIoctl 실패: " + std::to_string(WSAGetLastError()));
-			closesocket(*_controlServerSocket);
+			Utility::Log("NetworkManager", "HandleConnectComplete", "INVALID_SOCKET");
+			//SetupConnectSocket();
 			return;
 		}
 
-		// 서버 주소 설정
-		serverAddr = { 0 };
-		serverAddr.sin_family = AF_INET;
-		serverAddr.sin_port = htons(targetServerPort);
-		inet_pton(AF_INET, targetServerIp.c_str(), &serverAddr.sin_addr);
+		bool result = CallReceiveReady(_connectSocket);
+		std::string feedback = (result ? "Success" : "Fail");
+		Utility::Log("NetworkManager", "HandleConnectComplete", "Success And ReceiveReady " + feedback);
+	}
 
-		// 로컬 주소 바인딩
-		localAddr = { 0 };
-		localAddr.sin_family = AF_INET;
-		localAddr.sin_addr.s_addr = INADDR_ANY;
-		localAddr.sin_port = 0;  // 자동 할당
-
-		if (bind(*_controlServerSocket, (sockaddr*)&localAddr, sizeof(localAddr)) == SOCKET_ERROR)
+	void NetworkManager::HandleDisconnectComplete(ULONG_PTR key, std::string error)
+	{
+		auto finder = _accpetCompletedSocketMap.find(key);
+		if (finder == _accpetCompletedSocketMap.end())
 		{
-			//Utility::LogError("Client", "ClientManager", "클라이언트 bind 실패: " + std::to_string(WSAGetLastError()));
-			closesocket(*_controlServerSocket);
+			Utility::Log("NetworkManager", "HandleDisconnectComplete", "등록되지 않은 소켓Key");
 			return;
 		}
 
-		auto socketKey = (ULONG_PTR)_controlServerSocket;
-		//_clientMap.insert(std::make_pair(ulongPtr, targetClient));
-
-		CreateIoCompletionPort((HANDLE)*_controlServerSocket, _handle, socketKey, _threadCount);
-
-		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
-		targetOverlapped->Clear();
-		targetOverlapped->ConnectSetting(socketKey);
-
-		BOOL result = connectEx(*_controlServerSocket, (sockaddr*)&serverAddr, sizeof(serverAddr), NULL, 0, NULL, &*targetOverlapped);
-
-		if (!result)
+		SOCKET* targetSokcet = finder->second;
+		bool result = ProcessDisconnect(targetSokcet);
+		if (result)
 		{
-			int errorCode = WSAGetLastError();
-			if (errorCode != WSA_IO_PENDING)
-			{
-				Utility::Log("???", "Network", "Client", "ConnectEx 실패! 오류 코드: " + std::to_string(errorCode));
-
-				// 소켓을 안전하게 닫고 정리
-				if (*_controlServerSocket != INVALID_SOCKET)
-				{
-					closesocket(*_controlServerSocket);
-					*_controlServerSocket = INVALID_SOCKET;
-				}
-				WSACleanup();
-				return;
-			}
+			_accpetCompletedSocketMap.unsafe_erase(key);
 		}
 
-		_acceptedSocketMap.insert(std::make_pair(socketKey, _controlServerSocket));
-		Utility::Log("??", "NetworkManager", "ConnectToControlServer", "Completed");
+		std::string feedback = (result ? "Success" : "Fail");
+		std::string log = "Disconnect ? " + feedback + " Error Detail : " + error;
+		Utility::Log("NetworkManager", "HandleDisconnectComplete", log);
+	}
 
+	void NetworkManager::HandleAcceptComplete(ULONG_PTR key)
+	{
+		auto finder = _preparedSocketMap.find(key);
+		if (finder == _preparedSocketMap.end())
+		{
+			Utility::Log("NetworkManager", "HandleAcceptComplete", "등록되지 않은 소켓Key");
+			return;
+		}
+		SOCKET* targetSocket = finder->second;
+		_preparedSocketMap.unsafe_erase(key);
+		_accpetCompletedSocketMap.insert(std::make_pair(key, targetSocket));
+
+		bool result = CallReceiveReady(targetSocket);
+		std::string feedback = (result ? "Success" : "Fail");
+		Utility::Log("NetworkManager", "HandleAcceptComplete", "Success And ReceiveReady " + feedback);
+	}
+
+	void NetworkManager::HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes)
+	{
+		auto finder = _accpetCompletedSocketMap.find(key);
+		if (finder == _accpetCompletedSocketMap.end())
+		{
+			Utility::Log("NetworkManager", "HandleReceive", "등록되지 않은 소켓Key");
+			return;
+		}
+
+		SOCKET* targetSokcet = finder->second;
+		if (bytes <= 0)
+		{
+			bool result = ProcessDisconnect(targetSokcet);
+			if (result)
+			{
+				_accpetCompletedSocketMap.unsafe_erase(key);
+			}
+
+			std::string log = (result ? "Success" : "Fail");
+			Utility::Log("NetworkManager", "HandleDisconnectComplete", log);
+		}
+
+
+		//TODO 리시브 콜백.
+	}
+
+	void NetworkManager::HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped)
+	{
+		auto finder = _accpetCompletedSocketMap.find(key);
+		if (finder == _accpetCompletedSocketMap.end())
+		{
+			Utility::Log("NetworkManager", "HandleSendComplete", "등록되지 않은 소켓Key");
+			return;
+		}
+
+		Utility::Log("NetworkManager", "HandleSendComplete", "메세지 송신 완료");
 	}
 }

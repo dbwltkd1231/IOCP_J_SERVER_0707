@@ -21,55 +21,39 @@ namespace Network
 		NetworkManager();
 		~NetworkManager();
 
+		void Construct(int overlappedQueueMax);
+
+		void SetupListenSocket(int serverPort, int prepareSocketMax, int iocpThreadCount);
+		void PrepareAcceptSocket();
+		void SetupConnectSocket(std::string targetServerIp, int targetServerPort);
+		int GetCurrentAcceptedSocket();
+		void ProcessCompletionHandler();
+
+
 	private:
-		SOCKET _listenSocket;
-		HANDLE _handle = INVALID_HANDLE_VALUE;
+		void FillSocketQueue();
+		bool CallReceiveReady(SOCKET* targetSocket);
+		bool ProcessDisconnect(SOCKET* targetSocket);
+
+		void HandleConnectComplete();
+		void HandleDisconnectComplete(ULONG_PTR key, std::string error);
+		void HandleAcceptComplete(ULONG_PTR key);
+		void HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes);
+		void HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped);
+
+		HANDLE _iocp = INVALID_HANDLE_VALUE;
+		SOCKET* _listenSocket;
+		SOCKET* _connectSocket;
 		LPFN_ACCEPTEX _acceptExPointer = nullptr;
 
-	private:
-		int _preCreateSocketCount = 0;
-		int _acceptedSocketMax = 0;
-		int _threadCount = 0;
-		int _overlappedQueueMax = 0;
-
-	public:
-		void Construct(int serverPort, int threadCount, int preCreateSocketCount, int acceptSocketMax, int overlappedQueueMax, std::function<void(ULONG_PTR socketPtr, Network::OperationType, Network::CustomOverlapped*)> messageCallback);
-
-	private:
 		Utility::LockFreeCircleQueue<Network::CustomOverlapped*> _overlappedQueue;
+		tbb::concurrent_map<ULONG_PTR, SOCKET*> _preparedSocketMap;
 		Utility::LockFreeCircleQueue<SOCKET*> _preparedSocketQueue;
-		tbb::concurrent_map<ULONG_PTR, SOCKET*> _acceptedSocketMap;
+		tbb::concurrent_map<ULONG_PTR, SOCKET*> _accpetCompletedSocketMap;
 
-	private:
-		void OverlappedQueueSetting();
-		void PrepareSocket();
-		void RequestNewAccept();
+		int _prepareSocketMax;
+		int _iocpThreadCount;
 
-	public:
-		void RequestSend(ULONG_PTR socketPtr, const MessageHeader header, std::string& stringBuffer, int& bodySize);
-
-	private:
-		void ReceiveReady(ULONG_PTR socketPtr);
-		void Disconnect(ULONG_PTR socketPtr);
-		void ProcessSend(SOCKET* targetSocket, const MessageHeader header, std::string& stringBuffer, int& bodySize);
-
-	private:
-		std::function<void(ULONG_PTR socketPtr, Network::OperationType, Network::CustomOverlapped*)> _messageCallback;
-
-	public:
-		void ReturnOverlapped(Network::CustomOverlapped* customOverlapped);
-
-	private:
-		bool _networkOn;
-
-	private:
-		void Process();
-
-	public:
-		void ConnectToControlServer(std::string targetServerIp, int targetServerPort);
-
-	private:
-		SOCKET* _controlServerSocket;
-
+		bool _isOn;
 	};
 }

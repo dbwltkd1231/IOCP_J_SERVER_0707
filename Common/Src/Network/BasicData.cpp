@@ -97,6 +97,11 @@ namespace Network
 		return _operationType;
 	}
 
+	ULONG_PTR CustomOverlapped::GetKey() const
+	{
+		return _socketPtr;
+	}
+
 	void CustomOverlapped::Clear()
 	{
 		memset(Wsabuf[0].buf, 0, sizeof(MessageHeader));

@@ -8,17 +8,11 @@
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\Src\Network\Worker.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Business\ControlServer.cpp">
-      <Filter>Control</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Business\LobbyServer.cpp">
-      <Filter>Control</Filter>
-    </ClCompile>
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp">
       <Filter>Utility</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\Hub.cpp">
+      <Filter>Business</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -28,8 +22,8 @@
     <Filter Include="Utility">
       <UniqueIdentifier>{4d3852b6-f3ee-46d2-8487-d66d361286db}</UniqueIdentifier>
     </Filter>
-    <Filter Include="Control">
-      <UniqueIdentifier>{e31fa63c-6cb6-4446-a9e7-fa599234a9cc}</UniqueIdentifier>
+    <Filter Include="Business">
+      <UniqueIdentifier>{c6eb8eb8-9ae7-4f36-b6d6-3cd06e78655c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -39,26 +33,17 @@
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\Include\Network\Worker.h">
-      <Filter>Network</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h">
       <Filter>Utility</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Business\ControlServer.h">
-      <Filter>Control</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Business\Job.h">
-      <Filter>Control</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\Include\Utility\Debug.h">
       <Filter>Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Business\LobbyServer.h">
-      <Filter>Control</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\Include\Utility\ConfigCreator.h">
       <Filter>Utility</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Hub.h">
+      <Filter>Business</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

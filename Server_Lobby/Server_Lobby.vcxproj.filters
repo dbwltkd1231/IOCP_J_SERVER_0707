@@ -19,16 +19,10 @@
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp">
       <Filter>Network</Filter>
     </ClCompile>
-    <ClCompile Include="..\Common\Src\Network\Worker.cpp">
-      <Filter>Network</Filter>
-    </ClCompile>
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
-    <ClCompile Include="Src\LobbyServer.cpp">
-      <Filter>Business</Filter>
-    </ClCompile>
-    <ClCompile Include="Src\Job.cpp">
+    <ClCompile Include="Src\Hub.cpp">
       <Filter>Business</Filter>
     </ClCompile>
   </ItemGroup>
@@ -39,19 +33,13 @@
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h">
       <Filter>Network</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\Include\Network\Worker.h">
-      <Filter>Network</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\Include\Utility\Debug.h">
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h">
       <Filter>Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Include\LobbyServer.h">
-      <Filter>Business</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Job.h">
+    <ClInclude Include="Include\Hub.h">
       <Filter>Business</Filter>
     </ClInclude>
   </ItemGroup>

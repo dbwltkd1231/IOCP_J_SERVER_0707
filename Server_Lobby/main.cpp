@@ -1,5 +1,5 @@
 #pragma once
-#include "LobbyServer.h"
+#include "Hub.h"
 
 int main(int argc, char* argv[])
 {
@@ -11,6 +11,7 @@ int main(int argc, char* argv[])
 	int overlappedQueueMax;
 	std::string controlServerIp;
 	int controlServerPort;
+	int serverCapacity;
 
 	if (argc > 8) 
 	{
@@ -40,10 +41,12 @@ int main(int argc, char* argv[])
 		overlappedQueueMax = 100;
 		controlServerIp = "127.0.0.1";
 		controlServerPort = 9090;
+		serverCapacity = 100;
 	}
 	
-	Lobby::LobbyServer lobbyServer;
-	lobbyServer.Initialize(serverKey, serverPort, threadCount, preCreateSocketCount, acceptSocketMax, overlappedQueueMax, controlServerIp, controlServerPort);
-	lobbyServer.MainProcess();
+	LobbyServer::Hub hub;
+	hub.Construct(serverPort, preCreateSocketCount, threadCount, overlappedQueueMax, serverCapacity);
+	hub.ConnectToControlServer(controlServerIp, controlServerPort);
+	hub.MainThread();
 
 }

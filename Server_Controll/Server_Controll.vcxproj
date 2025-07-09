@@ -137,22 +137,17 @@
   <ItemGroup>
     <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
-    <ClCompile Include="..\Common\Src\Network\Worker.cpp" />
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Src\Business\LobbyServer.cpp" />
-    <ClCompile Include="Src\Business\ControlServer.cpp" />
+    <ClCompile Include="Src\Hub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Include\Network\BasicData.h" />
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
-    <ClInclude Include="..\Common\Include\Network\Worker.h" />
     <ClInclude Include="..\Common\Include\Utility\ConfigCreator.h" />
     <ClInclude Include="..\Common\Include\Utility\Debug.h" />
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />
-    <ClInclude Include="Include\Business\Job.h" />
-    <ClInclude Include="Include\Business\LobbyServer.h" />
-    <ClInclude Include="Include\Business\ControlServer.h" />
+    <ClInclude Include="Include\Hub.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -1,5 +1,5 @@
 #pragma once
-#include "Business/ControlServer.h"
+#include "Hub.h"
 #include "../Utility/ConfigCreator.h"
 
 //#define SettingMode 
@@ -32,10 +32,12 @@ int main()
     int lobbyAcceptSocketMax = config["LobbyServer"]["AcceptSocketMax"];
     int lobbyOverlappedQueueSizemax = config["LobbyServer"]["OverlappedQueueSizemax"];
 
-	Control::ControlServer controlServer;
-	controlServer.Initialize(controlIP, controlPort, controlThreadCount, controlPreCreateSocketCount, controlAcceptSocketMax, controlOverlappedQueueSizemax);
-    controlServer.LobbySeverInfoSetting(lobbyKeys, lobbyPorts, lobbyThreadCount, lobbyPreCreateSocketCount, lobbyAcceptSocketMax, lobbyOverlappedQueueSizemax);
-	controlServer.MainProcess();
+    ControlServer::Hub hub;
+    hub.Construct(controlPort, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax);
+    hub.MainThread();
+	//controlServer.Initialize(controlIP, controlPort, controlThreadCount, controlPreCreateSocketCount, controlAcceptSocketMax, controlOverlappedQueueSizemax);
+    //controlServer.LobbySeverInfoSetting(lobbyKeys, lobbyPorts, lobbyThreadCount, lobbyPreCreateSocketCount, lobbyAcceptSocketMax, lobbyOverlappedQueueSizemax);
+	//controlServer.MainProcess();
 
 #endif
 

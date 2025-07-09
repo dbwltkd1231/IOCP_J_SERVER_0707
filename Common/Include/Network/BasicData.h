@@ -7,11 +7,11 @@ namespace Network
     enum OperationType
     {
         OP_DEFAULT = 0,
-        OP_ACCEPT = 1,
-        OP_RECV = 2,
-        OP_SEND = 3,
-        OP_DISCONNECT = 4,
-        OP_CONNECT = 5
+        OP_CONNECT = 1,
+        OP_ACCEPT = 2,
+        OP_RECV = 3,
+        OP_SEND = 4,
+        OP_DISCONNECT = 5,
     };
 
     struct MessageHeader
@@ -43,11 +43,12 @@ namespace Network
         ULONG_PTR _socketPtr;
 
     public:
-        void ConnectSetting(ULONG_PTR socketPtr);
         void AcceptSetting(ULONG_PTR socketPtr);
+        void ConnectSetting(ULONG_PTR socketPtr);
         void ReceiveSetting();
-        void SendSetting(const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen); // send Àü¿ë.
+        void SendSetting(const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen);
         OperationType GetOperation() const;
+        ULONG_PTR GetKey() const;
         void Clear();
     };
 }
