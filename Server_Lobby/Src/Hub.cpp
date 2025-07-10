@@ -15,15 +15,15 @@ namespace LobbyServer
 	void Hub::Construct(int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity)
 	{
 		_acceptedCapacity = acceptedCapacity;
-
-		_networkManager.Construct(overlappedQueueMax);
-		_networkManager.SetupListenSocket(serverPort, prepareSocketMax, iocpThreadCount);
-
-
-		for (int i = 0;i < prepareSocketMax;++i)
-		{
-			_networkManager.PrepareAcceptSocket();
-		}
+	//
+	//	_networkManager.Construct(overlappedQueueMax);
+	//	_networkManager.SetupListenSocket(serverPort, prepareSocketMax, iocpThreadCount);
+	//
+	//
+	//	for (int i = 0;i < prepareSocketMax;++i)
+	//	{
+	//		_networkManager.PrepareAcceptSocket();
+	//	}
 	}
 
 	void Hub::ConnectToControlServer(std::string targetServerIp, int targetServerPort)

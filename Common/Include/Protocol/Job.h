@@ -10,6 +10,7 @@ namespace Protocol
 		int BodySize;
 		uint32_t ContentsType;
 		std::string Buffer;
+		bool IsSend;
 	};
 
 	class Job

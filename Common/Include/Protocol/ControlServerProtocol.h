@@ -1,19 +1,54 @@
 #pragma once
 #include <functional>
 #include "../Protocol/Job.h"
-#include "../Protocol/CONTROL_SERVER_PROTOCOL_generated.h"
+#include "../Protocol/SERVER_PROTOCOL_generated.h"
 
 namespace Protocol
 {
 	class JOB_REQUEST_LOBBYINFO : public Job
 	{
 	public:
-		JOB_REQUEST_LOBBYINFO(ULONG_PTR socketPtr, std::function<void(std::string& key, int& port, bool success)> lobbyInfo);
+		JOB_REQUEST_LOBBYINFO(ULONG_PTR socketPtr, std::function<void(std::string& key, int& port, bool success)> requestLobbyInfo);
 		~JOB_REQUEST_LOBBYINFO() override;
 
 		void Execute(JobOutput& output) override;
 
-		std::function<void(std::string& key, int& port, bool success)> LobbyInfo;
+	private:
+		std::function<void(std::string& key, int& port, bool success)> _requestLobbyInfo;
+	};
+
+	class JOB_NOTICE_LOBBYREADY : public Job
+	{
+	public:
+		JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string lobbyKey, int port, bool active, std::function<void(std::string& key, int& port, bool success)> saveLobbyInfo);
+		~JOB_NOTICE_LOBBYREADY() override;
+
+		void Execute(JobOutput& output) override;
+
+	private:
+		std::function<void(std::string& key, int& port, bool& success)> _saveLobbyInfo;
+
+		std::string _lobbyKey;
+		int _port;
+		bool _active;
+	};
+
+	class NOTICE_LOBBYINFO : Job
+	{
+	public:
+		NOTICE_LOBBYINFO(ULONG_PTR socketPtr, std::string LobbyKey, int current, int remain, bool active, std::function<void(std::string& key, int& current, int& remain, bool& active)> updateLobbyInfo);
+		~NOTICE_LOBBYINFO() override;
+
+		void Execute(JobOutput& output) override;
+
+	private:
+		std::function<void(std::string& key, int& current, int& remain, bool& active)> _updateLobbyInfo;
+
+		std::string _lobbyKey;
+		int _current;
+		int _remain;
+		bool _active;
+
 	};
 
 	/*
@@ -26,14 +61,7 @@ namespace Protocol
 		void Execute(JobOutput& output) override;
 	};
 
-	class NOTICE_LOBBYREADY : Job
-	{
-	public:
-		NOTICE_LOBBYREADY();
-		~NOTICE_LOBBYREADY() override;
-
-		void Execute(JobOutput& output) override;
-	};
+	
 
 	class NOTICE_LOBBYINFO : Job
 	{

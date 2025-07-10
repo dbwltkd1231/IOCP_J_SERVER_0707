@@ -1,10 +1,11 @@
 #include "Hub.h"
-
+#include "../Utility/Debug.h"
 
 namespace ControlServer
 {
 	Hub::Hub()
 	{
+		_currentLobbyCount = 0;
 		isOn = false;
 	}
 
@@ -13,8 +14,10 @@ namespace ControlServer
 		isOn = false;
 	}
 
-	void Hub::Construct(int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity)
+	void Hub::Construct(std::string ip, int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity)
 	{
+		_controlServerIp = ip;
+		_controlServerPort = serverPort;
 		_acceptedCapacity = acceptedCapacity;
 
 		_networkManager.Construct
@@ -30,6 +33,8 @@ namespace ControlServer
 		}
 
 		_packetQueue.Construct(packetQueueCapacity);
+
+		isOn = true;
 	}
 
 	void Hub::InitializeSubThread(int receiveThreadCount, int jobThreadCount)
@@ -52,11 +57,82 @@ namespace ControlServer
 
 	void Hub::Start()
 	{
-		isOn = true;
 		while (isOn)
 		{
 
 		}
+	}
+
+	void Hub::LobbySeverInfoSetting(std::vector<std::string> lobbyKeys, std::vector<int> lobbyPorts, int lobbyThreadCount, int lobbyPreCreateSocketCount, int lobbyAcceptSocketMax, int lobbyOverlappedQueueSizemax)
+	{
+		_lobbyKeys = lobbyKeys;
+		_lobbyPorts = lobbyPorts;
+		_lobbyThreadCount = lobbyThreadCount;
+		_lobbyPreCreateSocketCount = lobbyPreCreateSocketCount;
+		_lobbyAcceptSocketMax = lobbyAcceptSocketMax;
+		_lobbyOverlappedQueueSizemax = lobbyOverlappedQueueSizemax;
+
+		Utility::Log("Hub", "LobbySeverInfoSetting", "로비서버정보 저장 완료");
+	}
+
+	void Hub::LobbyServerStart(int count)
+	{
+		if (_lobbyKeys.size() < _currentLobbyCount + count)
+		{
+			Utility::Log("Hub", "LobbyServerStart", "저장된 로비 키 목록보다 많은 수 호출");
+			return;
+		}
+
+		if (_lobbyKeys.size() != _lobbyPorts.size())
+		{
+			Utility::Log("Hub", "LobbyServerStart", "저장된 로비 키 목록과 포트번호 목록의 숫자가 일치하지 않음");
+			return;
+		}
+
+		std::string lobbyKey = "";
+		int port = 0;
+		for (int i = _currentLobbyCount;i < count;++i)
+		{
+			lobbyKey = _lobbyKeys[i];
+			port = _lobbyPorts[i];
+
+			std::string lobbyExecutable = "Server_Lobby.exe";
+
+			std::string commandLine = lobbyExecutable + " "
+				+ lobbyKey + " "
+				+ std::to_string(port) + " "
+				+ std::to_string(_lobbyThreadCount) + " "
+				+ std::to_string(_lobbyPreCreateSocketCount) + " "
+				+ std::to_string(_lobbyAcceptSocketMax) + " "
+				+ std::to_string(_lobbyOverlappedQueueSizemax) + " "
+				+ _controlServerIp + " "
+				+ std::to_string(_controlServerPort) + " "
+				+ std::to_string(100);
+
+			STARTUPINFOA si = { sizeof(si) };
+			PROCESS_INFORMATION pi;
+
+			BOOL result = CreateProcessA(
+				NULL,
+				const_cast<char*>(commandLine.c_str()), // 직접 전달된 커맨드라인
+				NULL, NULL, FALSE,
+				CREATE_NEW_CONSOLE,
+				NULL, NULL,
+				&si, &pi
+			);
+
+			if (!result) 
+			{
+				DWORD err = GetLastError();
+				Utility::Log("Hub", "LobbyServerStart ",std::to_string(err));
+			}
+			else 
+			{
+				Utility::Log("Hub", "LobbyServerStart", "Lobby 서버 실행 성공!");
+			}
+		}
+
+		_currentLobbyCount += count;
 	}
 
 	void Hub::ReceiveMessage(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped)
@@ -104,7 +180,11 @@ namespace ControlServer
 				auto job = _jobQueue.pop();
 
 				job->Execute(output);
-				RequestSendMessage(output);
+
+				if (output.IsSend)
+				{
+					RequestSendMessage(output);
+				}
 			}
 			
 		}
@@ -125,8 +205,7 @@ namespace ControlServer
 			{
 				case protocol::MESSAGETYPE_REQUEST_LOBBYINFO://인증서버가 로비서버정보를 묻는 메세지
 				{
-					auto requestLobbyInfo = flatbuffers::GetRoot<protocol::REQUEST_LOBBYINFO>(packet->Buffer.c_str());
-					std::string lobbyKey = requestLobbyInfo->key()->str();
+					auto request = flatbuffers::GetRoot<protocol::REQUEST_LOBBYINFO>(packet->Buffer.c_str());
 
 					auto job = std::make_shared<Protocol::JOB_REQUEST_LOBBYINFO>(
 						packet->CompletionKey,
@@ -146,12 +225,40 @@ namespace ControlServer
 
 				case protocol::MESSAGETYPE_NOTICE_LOBBYREADY:
 				{
+					auto notice = flatbuffers::GetRoot<protocol::NOTICE_LOBBYREADY>(packet->Buffer.c_str());
+					std::string lobbyKey = notice->lobby_key()->str();
+					int port = notice->port();
+					bool active = notice->active();
+
+					auto job = std::make_shared<Protocol::JOB_NOTICE_LOBBYREADY>(
+						packet->CompletionKey,
+						lobbyKey,
+						port,
+						active,
+						[this](std::string& key, int& port, bool active) {this->_lobbyManager.SaveLobbyInfo(key, port, active);}
+					);
+
+					_jobQueue.push(std::move(job));
 
 					break;
 				}
 
 				case protocol::MESSAGETYPE_NOTICE_LOBBYINFO:
 				{
+					auto notice = flatbuffers::GetRoot<protocol::NOTICE_LOBBYINFO>(packet->Buffer.c_str());
+					std::string lobbyKey = notice->lobby_key()->str();
+					int current = notice->current();
+					int remain = notice->reamain();
+					bool active = notice->active();
+
+					auto job = std::make_shared<Protocol::NOTICE_LOBBYINFO>(
+						packet->CompletionKey,
+						lobbyKey,
+						current,
+						remain,
+						active,
+						[this](std::string& key, int& current, int& remain, bool active) {this->_lobbyManager.UpdateLobbyInfo(key, current, remain, active);}
+					);
 
 					break;
 				}

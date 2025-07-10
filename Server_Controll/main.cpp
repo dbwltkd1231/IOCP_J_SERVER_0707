@@ -33,11 +33,13 @@ int main()
     int lobbyOverlappedQueueSizemax = config["LobbyServer"]["OverlappedQueueSizemax"];
 
     ControlServer::Hub hub;
-    hub.Construct(controlPort, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax, 100);
+    hub.Construct(controlIP, controlPort, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax, 100);
+    hub.InitializeSubThread(1, 5);
+
+    hub.LobbySeverInfoSetting(lobbyKeys, lobbyPorts, lobbyThreadCount, lobbyPreCreateSocketCount, lobbyAcceptSocketMax, lobbyOverlappedQueueSizemax);
+    hub.LobbyServerStart(2);
+
     hub.Start();
-	//controlServer.Initialize(controlIP, controlPort, controlThreadCount, controlPreCreateSocketCount, controlAcceptSocketMax, controlOverlappedQueueSizemax);
-    //controlServer.LobbySeverInfoSetting(lobbyKeys, lobbyPorts, lobbyThreadCount, lobbyPreCreateSocketCount, lobbyAcceptSocketMax, lobbyOverlappedQueueSizemax);
-	//controlServer.MainProcess();
 
 #endif
 

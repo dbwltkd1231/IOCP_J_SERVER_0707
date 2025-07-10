@@ -60,11 +60,11 @@
     <ClInclude Include="..\Common\Include\Protocol\ControlServerProtocol.h">
       <Filter>Protocol</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\Include\Protocol\CONTROL_SERVER_PROTOCOL_generated.h">
-      <Filter>Protocol</Filter>
-    </ClInclude>
     <ClInclude Include="Include\LobbyManager.h">
       <Filter>Business</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h">
+      <Filter>Protocol</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

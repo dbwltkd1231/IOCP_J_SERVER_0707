@@ -147,8 +147,8 @@
     <ClInclude Include="..\Common\Include\Network\BasicData.h" />
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
     <ClInclude Include="..\Common\Include\Protocol\ControlServerProtocol.h" />
-    <ClInclude Include="..\Common\Include\Protocol\CONTROL_SERVER_PROTOCOL_generated.h" />
     <ClInclude Include="..\Common\Include\Protocol\Job.h" />
+    <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h" />
     <ClInclude Include="..\Common\Include\Utility\ConfigCreator.h" />
     <ClInclude Include="..\Common\Include\Utility\Debug.h" />
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />

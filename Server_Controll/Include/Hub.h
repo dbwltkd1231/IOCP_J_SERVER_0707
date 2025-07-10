@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <mutex>
 #include <queue>
+#include <vector>
 
 #include "../Network/Networkmanager.h"
 #include "LobbyManager.h"
@@ -16,9 +17,12 @@ namespace ControlServer
 		Hub();
 		~Hub();
 
-		void Construct(int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity);
+		void Construct(std::string ip, int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity);
 		void InitializeSubThread(int receiveThreadCount, int jobThreadCount);
 		void Start();
+
+		void LobbySeverInfoSetting(std::vector<std::string> lobbyKeys, std::vector<int> lobbyPorts, int lobbyThreadCount, int lobbyPreCreateSocketCount, int lobbyAcceptSocketMax, int lobbyOverlappedQueueSizemax);
+		void LobbyServerStart(int count);
 	private:
 		Network::NetworkManager _networkManager;
 
@@ -37,6 +41,17 @@ namespace ControlServer
 		Utility::LockFreeCircleQueue<std::shared_ptr<Protocol::Job>> _jobQueue;
 		std::condition_variable _jobThreadConditionValue;
 		std::mutex _lockJobThread;
+
+		std::string _controlServerIp;
+		int _controlServerPort;
+
+		int _currentLobbyCount;
+		std::vector<std::string> _lobbyKeys;
+		std::vector<int> _lobbyPorts;
+		int _lobbyThreadCount;
+		int _lobbyPreCreateSocketCount;
+		int _lobbyAcceptSocketMax;
+		int _lobbyOverlappedQueueSizemax;
 
 	};
 }

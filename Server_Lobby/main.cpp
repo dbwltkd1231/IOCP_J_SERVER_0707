@@ -1,4 +1,5 @@
 #pragma once
+#include <iostream>
 #include "Hub.h"
 
 int main(int argc, char* argv[])
@@ -44,9 +45,15 @@ int main(int argc, char* argv[])
 		serverCapacity = 100;
 	}
 	
-	LobbyServer::Hub hub;
-	hub.Construct(serverPort, preCreateSocketCount, threadCount, overlappedQueueMax, serverCapacity);
-	hub.ConnectToControlServer(controlServerIp, controlServerPort);
-	hub.MainThread();
+	std::cout << serverKey << std::endl;
+	while (true)
+	{
+
+	}
+
+//LobbyServer::Hub hub;
+//hub.Construct(serverPort, preCreateSocketCount, threadCount, overlappedQueueMax, serverCapacity);
+//hub.ConnectToControlServer(controlServerIp, controlServerPort);
+//hub.MainThread();
 
 }
