@@ -14,7 +14,7 @@ namespace Network
 		_isOn = false;
 	}
 
-	void NetworkManager::Construct(int overlappedQueueMax)
+	void NetworkManager::Construct(int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback)
 	{
 		_overlappedQueue.Construct(overlappedQueueMax);
 		for (int i = 0;i < overlappedQueueMax; ++i)
@@ -22,6 +22,8 @@ namespace Network
 			auto overlapped = new CustomOverlapped();
 			_overlappedQueue.push(std::move(overlapped));
 		}
+
+		_receiveCallback = std::move(receiveCallback);
 	}
 
 	void NetworkManager::SetupListenSocket(int serverPort, int prepareSocketMax, int iocpThreadCount)
@@ -75,6 +77,8 @@ namespace Network
 
 		Utility::Log("NetworkManager", "FillSocketQueue", "Completed !");
 	}
+
+	//- AcceptEx는 다수의 연결을 미리 걸어둘 수 있음 → 접속 폭주 상황에도 여유롭게 처리 가능. IOCP 워커 스레드가 비동기적으로 연결 완료를 받아들이고 수신 준비까지 빠르게 진행 가능. 즉, 동기 accept 쓰레드 구조보다 AcceptEx + IOCP 비동기 구조가 고속 대기열 처리에 유리.
 
 	void NetworkManager::PrepareAcceptSocket()
 	{

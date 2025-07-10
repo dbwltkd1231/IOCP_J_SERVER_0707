@@ -51,4 +51,20 @@ namespace Network
         ULONG_PTR GetKey() const;
         void Clear();
     };
+
+    struct Packet
+    {
+        ULONG_PTR CompletionKey;
+        int ContentsType;
+        std::string Buffer;
+    };
+
+    /*
+    Network::MessageHeader* receivedHeader = reinterpret_cast<Network::MessageHeader*>(overlapped->Wsabuf[0].buf);
+		auto requestBodySize = ntohl(receivedHeader->BodySize);
+		auto requestContentsType = ntohl(receivedHeader->ContentsType);
+
+		auto bufferString = std::string(overlapped->Wsabuf[1].buf, requestBodySize);// string 값복사 전달을 통해 buffer초기화시에도 안정성을 강화.
+		auto messageType = static_cast<protocol::MESSAGETYPE>(requestBodySize);
+    */
 }

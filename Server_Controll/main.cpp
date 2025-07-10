@@ -34,7 +34,7 @@ int main()
 
     ControlServer::Hub hub;
     hub.Construct(controlPort, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax);
-    hub.MainThread();
+    hub.Start();
 	//controlServer.Initialize(controlIP, controlPort, controlThreadCount, controlPreCreateSocketCount, controlAcceptSocketMax, controlOverlappedQueueSizemax);
     //controlServer.LobbySeverInfoSetting(lobbyKeys, lobbyPorts, lobbyThreadCount, lobbyPreCreateSocketCount, lobbyAcceptSocketMax, lobbyOverlappedQueueSizemax);
 	//controlServer.MainProcess();

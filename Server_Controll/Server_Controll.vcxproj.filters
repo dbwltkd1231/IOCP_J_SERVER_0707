@@ -14,6 +14,12 @@
     <ClCompile Include="Src\Hub.cpp">
       <Filter>Business</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\Src\Protocol\ControlServerProtocol.cpp">
+      <Filter>Protocol</Filter>
+    </ClCompile>
+    <ClCompile Include="Src\LobbyManager.cpp">
+      <Filter>Business</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Network">
@@ -24,6 +30,9 @@
     </Filter>
     <Filter Include="Business">
       <UniqueIdentifier>{c6eb8eb8-9ae7-4f36-b6d6-3cd06e78655c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{e5103e00-ae5a-458e-805b-52372789b74c}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -43,6 +52,18 @@
       <Filter>Utility</Filter>
     </ClInclude>
     <ClInclude Include="Include\Hub.h">
+      <Filter>Business</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\Job.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\ControlServerProtocol.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\CONTROL_SERVER_PROTOCOL_generated.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\LobbyManager.h">
       <Filter>Business</Filter>
     </ClInclude>
   </ItemGroup>

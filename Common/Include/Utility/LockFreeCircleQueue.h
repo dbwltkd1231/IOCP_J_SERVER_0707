@@ -124,5 +124,9 @@ LockFreeCircleQueue가 shared_ptr<T> 타입을 저장할 때, 내부에서 new T[queueMaxSiz
 - → move와 copy가 값 타입으로 확실히 작동함
 - → 객체 수명, 초기화, 안정성 문제 해결
 
+//
+
+shared_ptr를 쓰지않을경우 메모리에 계속해서 쌓인다는 말이있음
+std::move가 스택메모리에 객체를 새로생성하는거지, 힙메모리에생성된객체는 그대로남아있기때문.
 
 */
