@@ -1,6 +1,6 @@
 #pragma once
 #include <iostream>
-#include "Hub.h"
+#include "LobbyHub.h"
 
 int main(int argc, char* argv[])
 {
@@ -45,15 +45,12 @@ int main(int argc, char* argv[])
 		serverCapacity = 100;
 	}
 	
-	std::cout << serverKey << std::endl;
-	while (true)
-	{
+	LobbyServer::LobbyHub hub;
+	hub.Construct(serverKey, serverPort, threadCount, preCreateSocketCount, acceptSocketMax, overlappedQueueMax, 100, 100);
+	hub.InitializeSubThread(1, 5);
 
-	}
-
-//LobbyServer::Hub hub;
-//hub.Construct(serverPort, preCreateSocketCount, threadCount, overlappedQueueMax, serverCapacity);
-//hub.ConnectToControlServer(controlServerIp, controlServerPort);
-//hub.MainThread();
+	hub.ControlSeverInfoSetting(controlServerIp, controlServerPort);
+	hub.ConnectControlServer();
+	hub.Start();
 
 }

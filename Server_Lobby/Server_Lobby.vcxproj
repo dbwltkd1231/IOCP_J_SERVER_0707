@@ -21,16 +21,20 @@
   <ItemGroup>
     <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
+    <ClCompile Include="..\Common\Src\Protocol\LobbyServerProtocol.cpp" />
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Src\Hub.cpp" />
+    <ClCompile Include="Src\LobbyHub.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Include\Network\BasicData.h" />
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
+    <ClInclude Include="..\Common\Include\Protocol\Job.h" />
+    <ClInclude Include="..\Common\Include\Protocol\LobbyServerProtocol.h" />
+    <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h" />
     <ClInclude Include="..\Common\Include\Utility\Debug.h" />
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />
-    <ClInclude Include="Include\Hub.h" />
+    <ClInclude Include="Include\LobbyHub.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>
@@ -123,12 +127,12 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Common\Include\Network;$(ProjectDir)Include;$(SolutionDir)Common\Include\Utility;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Common\Include\Network;$(ProjectDir)Include;$(SolutionDir)Common\Include\Utility;$(SolutionDir)Common\Include\Protocol;$(SolutionDir)Common\Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Utility;$(SolutionDir)Common\Src\Network;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Utility;$(SolutionDir)Common\Src\Network;$(SolutionDir)Common\Src\Protocol;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>

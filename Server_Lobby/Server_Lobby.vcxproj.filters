@@ -10,6 +10,9 @@
     <Filter Include="Business">
       <UniqueIdentifier>{861f90a0-2245-4121-8332-c7e6e7766ada}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Protocol">
+      <UniqueIdentifier>{35a06163-5e9f-42ea-8a9f-01eaca39e129}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
@@ -22,8 +25,11 @@
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp">
       <Filter>Utility</Filter>
     </ClCompile>
-    <ClCompile Include="Src\Hub.cpp">
+    <ClCompile Include="Src\LobbyHub.cpp">
       <Filter>Business</Filter>
+    </ClCompile>
+    <ClCompile Include="..\Common\Src\Protocol\LobbyServerProtocol.cpp">
+      <Filter>Protocol</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
@@ -39,8 +45,17 @@
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h">
       <Filter>Utility</Filter>
     </ClInclude>
-    <ClInclude Include="Include\Hub.h">
+    <ClInclude Include="Include\LobbyHub.h">
       <Filter>Business</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\Job.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h">
+      <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\LobbyServerProtocol.h">
+      <Filter>Protocol</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
