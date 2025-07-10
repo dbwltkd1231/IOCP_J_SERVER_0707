@@ -264,6 +264,38 @@ namespace Network
 		}
 	}
 
+	void NetworkManager::SendRequest(ULONG_PTR& targetSocket, uint32_t& contentType, std::string& stringBuffer, int& bodySize)
+	{
+		auto finder = _accpetCompletedSocketMap.find(targetSocket);
+		if (finder == _accpetCompletedSocketMap.end())
+		{
+			Utility::Log("NetworkManager", "SendRequest", "Socket Not Find");
+			return;
+		}
+
+		auto socket = finder->second;
+
+		auto newOverlappedPtr = _overlappedQueue.pop();
+		newOverlappedPtr->Clear();
+
+		auto responseBodySize = htonl(bodySize);
+		auto responseContentType = htonl(contentType);
+		MessageHeader messageHeader(responseBodySize, responseContentType);
+
+		newOverlappedPtr->SendSetting(messageHeader, stringBuffer.c_str(), bodySize);
+
+		DWORD flags = 0;
+		int result = WSASend(*socket, newOverlappedPtr->Wsabuf, 2, nullptr, flags, &*newOverlappedPtr, nullptr);
+		int errorCode = WSAGetLastError();
+		if (result == SOCKET_ERROR && WSAGetLastError() != WSA_IO_PENDING)
+		{
+			std::string log = "WSASend 실패! 오류 코드: " + std::to_string(errorCode);
+			Utility::Log("NetworkManager", "SendRequest", log);
+			return;
+		}
+
+		Utility::Log("NetworkManager", "SendRequest", "클라이언트 WSASend 호출");
+	}
 
 	bool NetworkManager::CallReceiveReady(SOCKET* targetSocket)
 	{

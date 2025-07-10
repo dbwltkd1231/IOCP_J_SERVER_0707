@@ -1,4 +1,5 @@
 #pragma once
+#include <string>
 #include <cstdint>
 #include <winsock2.h>
 

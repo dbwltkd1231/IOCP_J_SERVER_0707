@@ -26,6 +26,7 @@ namespace ControlServer
 		int _acceptedCapacity;
 
 		void ReceiveMessage(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped);
+		void RequestSendMessage(Protocol::JobOutput output);
 		void ReceiveThread();
 		void JobThread();
 
@@ -33,7 +34,7 @@ namespace ControlServer
 
 		Utility::LockFreeCircleQueue<std::shared_ptr <Network::Packet>> _packetQueue;
 
-		std::queue<std::shared_ptr<Protocol::Job>> _jobQueue;
+		Utility::LockFreeCircleQueue<std::shared_ptr<Protocol::Job>> _jobQueue;
 		std::condition_variable _jobThreadConditionValue;
 		std::mutex _lockJobThread;
 

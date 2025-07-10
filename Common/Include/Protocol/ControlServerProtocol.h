@@ -1,4 +1,5 @@
 #pragma once
+#include <functional>
 #include "../Protocol/Job.h"
 #include "../Protocol/CONTROL_SERVER_PROTOCOL_generated.h"
 
@@ -7,12 +8,12 @@ namespace Protocol
 	class JOB_REQUEST_LOBBYINFO : public Job
 	{
 	public:
-		JOB_REQUEST_LOBBYINFO(ULONG_PTR socketPtr, std::string key);
+		JOB_REQUEST_LOBBYINFO(ULONG_PTR socketPtr, std::function<void(std::string& key, int& port, bool success)> lobbyInfo);
 		~JOB_REQUEST_LOBBYINFO() override;
 
 		void Execute(JobOutput& output) override;
 
-		std::string Key;
+		std::function<void(std::string& key, int& port, bool success)> LobbyInfo;
 	};
 
 	/*

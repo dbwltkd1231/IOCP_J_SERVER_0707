@@ -6,10 +6,10 @@ namespace Protocol
 {
 	struct JobOutput
 	{
-		std::string Buffer;
+		ULONG_PTR SocketPtr;
 		int BodySize;
 		uint32_t ContentsType;
-		ULONG_PTR SocketPtr;
+		std::string Buffer;
 	};
 
 	class Job

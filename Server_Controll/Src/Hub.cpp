@@ -73,6 +73,12 @@ namespace ControlServer
 		_packetQueue.push(std::move(packet));
 	}
 
+	void Hub::RequestSendMessage(Protocol::JobOutput output)
+	{
+		_networkManager.SendRequest(output.SocketPtr, output.ContentsType, output.Buffer, output.BodySize);
+	}
+
+	// 여러 쓰레드
 	void Hub::JobThread()
 	{
 		Protocol::JobOutput output;
@@ -84,7 +90,7 @@ namespace ControlServer
 			(
 				lock, [this]()
 				{
-					!this->_jobQueue.empty() || !isOn;
+					return !this->_jobQueue.empty() || !isOn;
 				}
 			);
 
@@ -93,15 +99,18 @@ namespace ControlServer
 				return;
 			}
 
-			std::shared_ptr<Protocol::Job> job = _jobQueue.front();
-			_jobQueue.pop();
-			lock.unlock();
+			while (!_jobQueue.empty())
+			{
+				auto job = _jobQueue.pop();
 
-			job->Execute(output);
-
+				job->Execute(output);
+				RequestSendMessage(output);
+			}
+			
 		}
 	}
 
+	//IOCP Worker쓰레드 -> Receive단일쓰레드로 메세지모아서 처리.
 	void Hub::ReceiveThread()
 	{
 		while (isOn)
@@ -110,7 +119,6 @@ namespace ControlServer
 				continue;
 
 			auto packet = _packetQueue.pop();
-
 			auto messageType = static_cast<protocol::MESSAGETYPE>(packet->ContentsType);
 
 			switch (messageType)
@@ -120,7 +128,11 @@ namespace ControlServer
 					auto requestLobbyInfo = flatbuffers::GetRoot<protocol::REQUEST_LOBBYINFO>(packet->Buffer.c_str());
 					std::string lobbyKey = requestLobbyInfo->key()->str();
 
-					auto job = std::make_shared<Protocol::JOB_REQUEST_LOBBYINFO>(packet->CompletionKey, lobbyKey);
+					auto job = std::make_shared<Protocol::JOB_REQUEST_LOBBYINFO>(
+						packet->CompletionKey,
+						[this](std::string& key, int& port, bool success) {this->_lobbyManager.ResponseLobbyInfo(key, port, success);}
+						);
+
 					_jobQueue.push(std::move(job));
 
 					break;

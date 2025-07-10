@@ -29,6 +29,7 @@ namespace Network
 		int GetCurrentAcceptedSocket();
 		void ProcessCompletionHandler();
 
+		void SendRequest(ULONG_PTR& targetSocket, uint32_t& contentType, std::string& stringBuffer, int& bodySize);
 
 	private:
 		void FillSocketQueue();
