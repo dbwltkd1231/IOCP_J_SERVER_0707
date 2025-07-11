@@ -15,16 +15,26 @@ namespace Network
         OP_DISCONNECT = 5,
     };
 
+    enum SenderType
+    {
+        DEFAULT =0,
+        CONTROL_SERVER = 1,
+        AUTH_SERVER =2,
+        LOBBY_SERVER =3,
+        CLIENT =4
+    };
+
     struct MessageHeader
     {
+        uint32_t SenderType;
         uint32_t BodySize;
         uint32_t ContentsType;
 
-        MessageHeader(uint32_t bodySize, uint32_t contentsType) : BodySize(bodySize), ContentsType(contentsType)
+        MessageHeader(uint32_t senderType, uint32_t bodySize, uint32_t contentsType) : SenderType(senderType), BodySize(bodySize), ContentsType(contentsType)
         {
         }
 
-        MessageHeader(const MessageHeader& other) : BodySize(other.BodySize), ContentsType(other.ContentsType)
+        MessageHeader(const MessageHeader& other) : SenderType(other.SenderType), BodySize(other.BodySize), ContentsType(other.ContentsType)
         {
         }
     };
@@ -55,6 +65,7 @@ namespace Network
 
     struct Packet
     {
+        int SenderType;
         ULONG_PTR CompletionKey;
         int ContentsType;
         std::string Buffer;

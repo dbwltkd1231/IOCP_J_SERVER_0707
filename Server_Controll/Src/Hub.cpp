@@ -21,7 +21,9 @@ namespace ControlServer
 		_acceptedCapacity = acceptedCapacity;
 
 		_networkManager.Construct
-		(	overlappedQueueMax,
+		(	
+			Network::SenderType::CONTROL_SERVER,
+			overlappedQueueMax,
 			[this](ULONG_PTR key, Network::CustomOverlapped* overlapped) {this->ReceiveMessage(key, overlapped);}
 		);
 
@@ -132,17 +134,53 @@ namespace ControlServer
 			}
 		}
 
-		_currentLobbyCount += count;
+		_currentLobbyCount += count;//실패해도 실패한대로 넘어간다.
 	}
 
 	void Hub::ReceiveMessage(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped)
 	{
+		Network::OperationType operationType = overlapped->GetOperation();
+
+		switch (operationType)
+		{
+			case Network::OperationType::OP_ACCEPT:
+			{
+				break;
+			}
+
+			case Network::OperationType::OP_CONNECT:
+			{
+				break;
+			}
+
+			case Network::OperationType::OP_RECV:
+			{
+				break;
+			}
+
+			case Network::OperationType::OP_SEND:
+			{
+				break;
+			}
+
+			case Network::OperationType::OP_DISCONNECT:
+			{
+				break;
+			}
+
+			case Network::OperationType::OP_DEFAULT:
+			{
+				break;
+			}
+		}
+
 		Network::MessageHeader* receivedHeader = reinterpret_cast<Network::MessageHeader*>(overlapped->Wsabuf[0].buf);
 		std::shared_ptr<Network::Packet> packet = std::make_shared< Network::Packet>();
 
 		int bodySize = ntohl(receivedHeader->BodySize);
 
 		packet->CompletionKey = completionKey;
+		packet->SenderType = ntohl(receivedHeader->SenderType);
 		packet->ContentsType = ntohl(receivedHeader->ContentsType);
 		packet->Buffer = std::string(overlapped->Wsabuf[1].buf, bodySize);// string 값복사 전달을 통해 buffer초기화시에도 안정성을 강화.
 
@@ -198,8 +236,9 @@ namespace ControlServer
 			if (_packetQueue.empty())
 				continue;
 
-			auto packet = _packetQueue.pop();
-			auto messageType = static_cast<protocol::MESSAGETYPE>(packet->ContentsType);
+			std::shared_ptr<Network::Packet> packet = _packetQueue.pop();
+			protocol::MESSAGETYPE messageType = static_cast<protocol::MESSAGETYPE>(packet->ContentsType);
+			Network::SenderType sender = static_cast<Network::SenderType>(packet->SenderType);
 
 			switch (messageType)
 			{

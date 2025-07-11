@@ -25,7 +25,9 @@ namespace LobbyServer
 		_lobbyCapacity = lobbyCapacity;
 
 		_networkManager.Construct
-		(overlappedQueueMax,
+		(
+			Network::SenderType::LOBBY_SERVER,
+			overlappedQueueMax,
 			[this](ULONG_PTR key, Network::CustomOverlapped* overlapped) {this->ReceiveMessage(key, overlapped);}
 		);
 
@@ -143,6 +145,7 @@ namespace LobbyServer
 
 			auto packet = _packetQueue.pop();
 			auto messageType = static_cast<protocol::MESSAGETYPE>(packet->ContentsType);
+			Network::SenderType sender = static_cast<Network::SenderType>(packet->SenderType);
 
 			/*
 			switch (messageType)

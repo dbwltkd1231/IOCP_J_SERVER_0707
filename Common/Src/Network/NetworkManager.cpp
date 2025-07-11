@@ -7,15 +7,19 @@ namespace Network
 	NetworkManager::NetworkManager()
 	{
 		_isOn = false;
+		_senderType = Network::SenderType::DEFAULT;
 	}
 
 	NetworkManager::~NetworkManager()
 	{
 		_isOn = false;
+		_senderType = Network::SenderType::DEFAULT;
 	}
 
-	void NetworkManager::Construct(int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback)
+	void NetworkManager::Construct(Network::SenderType senderType, int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback)
 	{
+		_senderType = senderType;
+
 		_overlappedQueue.Construct(overlappedQueueMax);
 		for (int i = 0;i < overlappedQueueMax; ++i)
 		{
@@ -280,7 +284,7 @@ namespace Network
 
 		auto responseBodySize = htonl(bodySize);
 		auto responseContentType = htonl(contentType);
-		MessageHeader messageHeader(responseBodySize, responseContentType);
+		MessageHeader messageHeader(_senderType, responseBodySize, responseContentType);
 
 		newOverlappedPtr->SendSetting(messageHeader, stringBuffer.c_str(), bodySize);
 
@@ -423,8 +427,7 @@ namespace Network
 			Utility::Log("NetworkManager", "HandleDisconnectComplete", log);
 		}
 
-
-		//TODO 리시브 콜백.
+		_receiveCallback(key, overlapped);
 	}
 
 	void NetworkManager::HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped)

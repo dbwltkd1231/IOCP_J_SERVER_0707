@@ -21,8 +21,7 @@ namespace Network
 		NetworkManager();
 		~NetworkManager();
 
-		void Construct(int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback);
-
+		void Construct(Network::SenderType senderType, int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback);
 		void SetupListenSocket(int serverPort, int prepareSocketMax, int iocpThreadCount);
 		void PrepareAcceptSocket();
 		void SetupConnectSocket(std::string targetServerIp, int targetServerPort);
@@ -53,6 +52,8 @@ namespace Network
 		tbb::concurrent_map<ULONG_PTR, SOCKET*> _accpetCompletedSocketMap;
 
 		std::function<void(ULONG_PTR, CustomOverlapped*)> _receiveCallback;
+
+		Network::SenderType _senderType;
 
 		int _prepareSocketMax;
 		int _iocpThreadCount;
