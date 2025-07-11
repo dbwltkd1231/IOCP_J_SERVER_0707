@@ -106,6 +106,7 @@ namespace LobbyServer
 		_networkManager.SetupConnectSocket(_controlServerIp, _controlServerPort, Network::SenderType::CONTROL_SERVER);
 	}
 
+	// Hub의 코드가 계속 늘어나긴할텐데... 일단 해보고 나중에판단하는것으로..
 	void LobbyHub::ProcessIocp(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped)
 	{
 		Network::OperationType operationType = overlapped->GetOperation();
@@ -121,6 +122,22 @@ namespace LobbyServer
 				{
 					Utility::Log("LobbyHub", "ProcessIocp", "Client Accept");
 					_lobbyMonitor.RegisterLobbyUser();
+
+					std::string key = _lobbyKey;
+					int current = _lobbyMonitor.GetCurrentUser();
+					int remain = _lobbyMonitor.GetRemainCapacity();
+					bool active = isOn;
+					auto job = std::make_shared<Protocol::JOB_NOTICE_LOBBYINFO>(
+						completionKey,
+						key,
+						current,
+						remain,
+						active
+					);
+
+					_jobQueue.push(std::move(job));
+					_jobThreadConditionValue.notify_one();
+					Utility::Log("LobbyHub", "ProcessIocp", "Control Server Connect");
 				}
 
 				break;
@@ -191,7 +208,7 @@ namespace LobbyServer
 		Utility::Log("LobbyHub","RequestSendMessage","Complete");
 	}
 
-	// 여러 쓰레드
+	// 멀티 쓰레드
 	void LobbyHub::JobThread()
 	{
 		Protocol::JobOutput output;

@@ -1,0 +1,76 @@
+namespace protocol;
+
+enum MESSAGETYPE : int
+{
+BEGIN = 0,
+
+REQUEST_LOBBYINFO,
+RESPONSE_LOBBYINFO,
+
+NOTICE_LOBBYREADY,
+
+NOTICE_LOBBYINFO,
+
+NOTICE_SECRETKEY,
+
+NOTICE_RESPONSESPEED,
+
+END
+}
+
+table REQUEST_LOBBYINFO
+{
+
+}
+
+table RESPONSE_LOBBYINFO
+{
+    feedback : bool;
+    lobby_key : string;
+    port : int32;
+}
+
+table NOTICE_LOBBYREADY
+{
+    lobby_key : string;
+    port : int32;
+    active : bool;   
+}
+
+table NOTICE_LOBBYINFO
+{
+    lobby_key : string;
+    current : int32;
+    reamain : int32;
+    active : bool;   
+}
+
+table NOTICE_SECRETKEY
+{
+    secret_key : string;
+}
+
+table NOTICE_RESPONSESPEED
+{
+    lobby_key : string;
+    response_time : float;    
+}
+
+union Content
+{
+   REQUEST_LOBBYINFO,
+   RESPONSE_LOBBYINFO,
+   NOTICE_LOBBYREADY,
+   NOTICE_LOBBYINFO,
+   NOTICE_SECRETKEY,
+   NOTICE_RESPONSESPEED,
+}
+
+
+table SERVER_PROTOCOL
+{
+    message_type : MESSAGETYPE;
+    content : Content;
+}
+
+root_type SERVER_PROTOCOL;

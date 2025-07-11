@@ -20,7 +20,21 @@ namespace Protocol
 
 	};
 
+	class JOB_NOTICE_LOBBYINFO : public Job
+	{
+	public:
+		JOB_NOTICE_LOBBYINFO(ULONG_PTR socketPtr, std::string key, int current, int remain, bool active);
+		~JOB_NOTICE_LOBBYINFO() override;
 
+		void Execute(JobOutput& output) override;
+
+	private:
+		std::string _key;
+		int _current;
+		int _remain;
+		bool _active;
+
+	};
 
 
 
