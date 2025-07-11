@@ -8,15 +8,22 @@ namespace Network
 	{
 		_isOn = false;
 		_senderType = Network::SenderType::DEFAULT;
+		_iocpCallback = nullptr;
+		_disconnectCallback = nullptr;
 	}
 
 	NetworkManager::~NetworkManager()
 	{
 		_isOn = false;
 		_senderType = Network::SenderType::DEFAULT;
+		_iocpCallback = nullptr;
+		_disconnectCallback = nullptr;
+
+		//  _overlappedQueue 초기화
+		// connectedSocketMap 초기화
 	}
 
-	void NetworkManager::Construct(Network::SenderType senderType, int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback)
+	void NetworkManager::Construct(Network::SenderType senderType, int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> iocpCallback, std::function<void(ULONG_PTR)> disconnectCallback)
 	{
 		_senderType = senderType;
 
@@ -27,7 +34,8 @@ namespace Network
 			_overlappedQueue.push(std::move(overlapped));
 		}
 
-		_receiveCallback = std::move(receiveCallback);
+		_iocpCallback = std::move(iocpCallback);
+		_disconnectCallback = std::move(disconnectCallback);
 	}
 
 	void NetworkManager::SetupListenSocket(int serverPort, int prepareSocketMax, int iocpThreadCount)
@@ -84,7 +92,7 @@ namespace Network
 
 	//- AcceptEx는 다수의 연결을 미리 걸어둘 수 있음 → 접속 폭주 상황에도 여유롭게 처리 가능. IOCP 워커 스레드가 비동기적으로 연결 완료를 받아들이고 수신 준비까지 빠르게 진행 가능. 즉, 동기 accept 쓰레드 구조보다 AcceptEx + IOCP 비동기 구조가 고속 대기열 처리에 유리.
 
-	void NetworkManager::PrepareAcceptSocket()
+	void NetworkManager::PrepareAcceptSocket(Network::SenderType senderType)
 	{
 		if (_preparedSocketQueue.size() < 1)
 		{
@@ -106,7 +114,7 @@ namespace Network
 
 		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
 		targetOverlapped->Clear();
-		targetOverlapped->AcceptSetting((ULONG_PTR)targetSocket);
+		targetOverlapped->AcceptSetting(targetSocket, senderType);
 
 		DWORD bytesReceived = 0;
 		BOOL result = _acceptExPointer(
@@ -124,11 +132,10 @@ namespace Network
 			return;
 		}
 
-		_preparedSocketMap.insert(std::make_pair((ULONG_PTR)targetSocket, targetSocket));
 		Utility::Log("PrepareAcceptSocket", "PrepareAcceptSocket", "AcceptEx 호출 성공");
 	}
 
-	void NetworkManager::SetupConnectSocket(std::string targetServerIp, int targetServerPort)
+	void NetworkManager::SetupConnectSocket(std::string targetServerIp, int targetServerPort, Network::SenderType senderType)
 	{
 		SOCKET socket = WSASocket(AF_INET, SOCK_STREAM, 0, nullptr, 0, WSA_FLAG_OVERLAPPED);
 
@@ -145,18 +152,18 @@ namespace Network
 			return;
 		}
 
-		_connectSocket = new SOCKET(socket);
+		SOCKET* connectSocket = new SOCKET(socket);
 
 		GUID connectExGuid = WSAID_CONNECTEX;
 		LPFN_CONNECTEX connectEx = NULL;
 		DWORD bytes;
-		if (WSAIoctl(*_connectSocket, SIO_GET_EXTENSION_FUNCTION_POINTER,
+		if (WSAIoctl(*connectSocket, SIO_GET_EXTENSION_FUNCTION_POINTER,
 			&connectExGuid, sizeof(connectExGuid),
 			&connectEx, sizeof(connectEx),
 			&bytes, NULL, NULL))
 		{
 			Utility::Log("NetworkManager", "SetupConnectSocket", "ConnectEx 가져오기 실패");
-			closesocket(*_connectSocket);
+			closesocket(*connectSocket);
 			return;
 		}
 
@@ -165,15 +172,15 @@ namespace Network
 		targetServerAddr.sin_port = htons(targetServerPort);
 		inet_pton(AF_INET, targetServerIp.c_str(), &targetServerAddr.sin_addr);
 
-		auto socketKey = (ULONG_PTR)_connectSocket;
+		auto socketKey = (ULONG_PTR)connectSocket;
 
-		CreateIoCompletionPort((HANDLE)*_connectSocket, _iocp, socketKey, _iocpThreadCount);
+		CreateIoCompletionPort((HANDLE)*connectSocket, _iocp, socketKey, _iocpThreadCount);
 
 		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
 		targetOverlapped->Clear();
-		targetOverlapped->ConnectSetting((ULONG_PTR)_connectSocket);
+		targetOverlapped->ConnectSetting(connectSocket, senderType);
 
-		BOOL result = connectEx(*_connectSocket, (sockaddr*)&targetServerAddr, sizeof(targetServerAddr), nullptr, 0, nullptr, &*targetOverlapped);
+		BOOL result = connectEx(*connectSocket, (sockaddr*)&targetServerAddr, sizeof(targetServerAddr), nullptr, 0, nullptr, &*targetOverlapped);
 		int lastError = WSAGetLastError();
 		if (result == FALSE && lastError != WSA_IO_PENDING)
 		{
@@ -187,7 +194,7 @@ namespace Network
 
 	int NetworkManager::GetCurrentAcceptedSocket()
 	{
-		return _accpetCompletedSocketMap.size();
+		return _connectedSocketMap.size();
 	}
 
 	void NetworkManager::ProcessCompletionHandler()
@@ -236,13 +243,12 @@ namespace Network
 				{
 					case OperationType::OP_CONNECT:
 					{
-						HandleConnectComplete();
+						HandleConnectComplete(completionKey, overlapped);
 						break;
 					}
 					case OperationType::OP_ACCEPT:
 					{
-						HandleAcceptComplete(overlapped->GetKey()); //- AcceptEx() 완료 시 IOCP로 들어오는 이벤트에서 completionKey는 리슨 소켓의 키가 들어온다.
-
+						HandleAcceptComplete(completionKey, overlapped); //- AcceptEx() 완료 시 IOCP로 들어오는 이벤트에서 completionKey는 리슨 소켓의 키가 들어온다.
 						break;
 					}
 					case OperationType::OP_RECV:
@@ -260,6 +266,8 @@ namespace Network
 						Utility::Log("NetworkManager", "ProcessCompletionHandler", "Default Type Message");
 						break;
 					}
+
+					_iocpCallback(completionKey, overlapped);
 				}
 			}
 
@@ -270,8 +278,8 @@ namespace Network
 
 	void NetworkManager::SendRequest(ULONG_PTR& targetSocket, uint32_t& contentType, std::string& stringBuffer, int& bodySize)
 	{
-		auto finder = _accpetCompletedSocketMap.find(targetSocket);
-		if (finder == _accpetCompletedSocketMap.end())
+		auto finder = _connectedSocketMap.find(targetSocket);
+		if (finder == _connectedSocketMap.end())
 		{
 			Utility::Log("NetworkManager", "SendRequest", "Socket Not Find");
 			return;
@@ -286,7 +294,7 @@ namespace Network
 		auto responseContentType = htonl(contentType);
 		MessageHeader messageHeader(_senderType, responseBodySize, responseContentType);
 
-		newOverlappedPtr->SendSetting(messageHeader, stringBuffer.c_str(), bodySize);
+		newOverlappedPtr->SendSetting(socket, messageHeader, stringBuffer.c_str(), bodySize);
 
 		DWORD flags = 0;
 		int result = WSASend(*socket, newOverlappedPtr->Wsabuf, 2, nullptr, flags, &*newOverlappedPtr, nullptr);
@@ -315,7 +323,7 @@ namespace Network
 
 		CustomOverlapped* targetOverlapped = _overlappedQueue.pop();
 		targetOverlapped->Clear();
-		targetOverlapped->ReceiveSetting();
+		targetOverlapped->ReceiveSetting(targetSocket);
 
 		DWORD flags = 0;
 		int result = WSARecv(*targetSocket, targetOverlapped->Wsabuf, 2, nullptr, &flags, &*targetOverlapped, nullptr);
@@ -353,24 +361,51 @@ namespace Network
 		return true;
 	}
 
-	void NetworkManager::HandleConnectComplete()
+	void NetworkManager::HandleAcceptComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped)
 	{
-		if (_connectSocket == nullptr || *_connectSocket == INVALID_SOCKET)
-		{
-			Utility::Log("NetworkManager", "HandleConnectComplete", "INVALID_SOCKET");
-			//SetupConnectSocket();
-			return;
-		}
+		SOCKET* targetSocket = overlapped->GetSocketPtr();
+		_connectedSocketMap.insert(std::make_pair(completionKey, targetSocket));
 
-		bool result = CallReceiveReady(_connectSocket);
+		bool result = CallReceiveReady(targetSocket);
+		std::string feedback = (result ? "Success" : "Fail");
+		Utility::Log("NetworkManager", "HandleAcceptComplete", "Success And ReceiveReady " + feedback);
+	}
+
+	void NetworkManager::HandleConnectComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped)
+	{
+		SOCKET* targetSocket = overlapped->GetSocketPtr();
+		_connectedSocketMap.insert(std::make_pair(completionKey, targetSocket));
+
+		bool result = CallReceiveReady(targetSocket);
 		std::string feedback = (result ? "Success" : "Fail");
 		Utility::Log("NetworkManager", "HandleConnectComplete", "Success And ReceiveReady " + feedback);
 	}
 
+	void NetworkManager::HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes)
+	{
+		if (bytes <= 0)
+		{
+			Utility::Log("NetworkManager", "HandleReceiveComplete", "Recv 0 bytes ");
+			HandleDisconnectComplete(key, "WSARecv 0 bytes");
+			return;
+		}
+
+		SOCKET* targetSokcet = overlapped->GetSocketPtr();
+
+		bool result = CallReceiveReady(targetSokcet);
+		std::string feedback = (result ? "Success" : "Fail");
+		Utility::Log("NetworkManager", "HandleReceiveComplete", "Success And ReceiveReady " + feedback);
+	}
+
+	void NetworkManager::HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped)
+	{
+		Utility::Log("NetworkManager", "HandleSendComplete", "메세지 송신 완료");
+	}
+
 	void NetworkManager::HandleDisconnectComplete(ULONG_PTR key, std::string error)
 	{
-		auto finder = _accpetCompletedSocketMap.find(key);
-		if (finder == _accpetCompletedSocketMap.end())
+		auto finder = _connectedSocketMap.find(key);
+		if (finder == _connectedSocketMap.end())
 		{
 			Utility::Log("NetworkManager", "HandleDisconnectComplete", "등록되지 않은 소켓Key");
 			return;
@@ -380,65 +415,13 @@ namespace Network
 		bool result = ProcessDisconnect(targetSokcet);
 		if (result)
 		{
-			_accpetCompletedSocketMap.unsafe_erase(key);
+			_connectedSocketMap.unsafe_erase(key);
 		}
 
 		std::string feedback = (result ? "Success" : "Fail");
 		std::string log = "Disconnect ? " + feedback + " Error Detail : " + error;
 		Utility::Log("NetworkManager", "HandleDisconnectComplete", log);
-	}
 
-	void NetworkManager::HandleAcceptComplete(ULONG_PTR key)
-	{
-		auto finder = _preparedSocketMap.find(key);
-		if (finder == _preparedSocketMap.end())
-		{
-			Utility::Log("NetworkManager", "HandleAcceptComplete", "등록되지 않은 소켓Key");
-			return;
-		}
-		SOCKET* targetSocket = finder->second;
-		_preparedSocketMap.unsafe_erase(key);
-		_accpetCompletedSocketMap.insert(std::make_pair(key, targetSocket));
-
-		bool result = CallReceiveReady(targetSocket);
-		std::string feedback = (result ? "Success" : "Fail");
-		Utility::Log("NetworkManager", "HandleAcceptComplete", "Success And ReceiveReady " + feedback);
-	}
-
-	void NetworkManager::HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes)
-	{
-		auto finder = _accpetCompletedSocketMap.find(key);
-		if (finder == _accpetCompletedSocketMap.end())
-		{
-			Utility::Log("NetworkManager", "HandleReceive", "등록되지 않은 소켓Key");
-			return;
-		}
-
-		SOCKET* targetSokcet = finder->second;
-		if (bytes <= 0)
-		{
-			bool result = ProcessDisconnect(targetSokcet);
-			if (result)
-			{
-				_accpetCompletedSocketMap.unsafe_erase(key);
-			}
-
-			std::string log = (result ? "Success" : "Fail");
-			Utility::Log("NetworkManager", "HandleDisconnectComplete", log);
-		}
-
-		_receiveCallback(key, overlapped);
-	}
-
-	void NetworkManager::HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped)
-	{
-		auto finder = _accpetCompletedSocketMap.find(key);
-		if (finder == _accpetCompletedSocketMap.end())
-		{
-			Utility::Log("NetworkManager", "HandleSendComplete", "등록되지 않은 소켓Key");
-			return;
-		}
-
-		Utility::Log("NetworkManager", "HandleSendComplete", "메세지 송신 완료");
+		_disconnectCallback(key);
 	}
 }

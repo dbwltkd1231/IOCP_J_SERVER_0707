@@ -11,8 +11,7 @@ namespace Network
         OP_CONNECT = 1,
         OP_ACCEPT = 2,
         OP_RECV = 3,
-        OP_SEND = 4,
-        OP_DISCONNECT = 5,
+        OP_SEND = 4
     };
 
     enum SenderType
@@ -51,15 +50,19 @@ namespace Network
 
     private:
         OperationType _operationType;
-        ULONG_PTR _socketPtr;
+
+        //초기연결용 Accept, Connect
+        SOCKET* _socket;
+        SenderType _senderType;
 
     public:
-        void AcceptSetting(ULONG_PTR socketPtr);
-        void ConnectSetting(ULONG_PTR socketPtr);
-        void ReceiveSetting();
-        void SendSetting(const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen);
+        void AcceptSetting(SOCKET* socket, Network::SenderType senderType);
+        void ConnectSetting(SOCKET* socket, Network::SenderType senderType);
+        void ReceiveSetting(SOCKET* socket);
+        void SendSetting(SOCKET* socket, const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen);
         OperationType GetOperation() const;
-        ULONG_PTR GetKey() const;
+        Network::SenderType GetSenderType() const;
+        SOCKET* GetSocketPtr() const;
         void Clear();
     };
 

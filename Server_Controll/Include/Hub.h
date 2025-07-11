@@ -29,7 +29,8 @@ namespace ControlServer
 		bool isOn;
 		int _acceptedCapacity;
 
-		void ReceiveMessage(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped);
+		void ProcessIocp(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped);
+		void ProcessDisconnect(ULONG_PTR completionKey);
 		void RequestSendMessage(Protocol::JobOutput output);
 		void ReceiveThread();
 		void JobThread();

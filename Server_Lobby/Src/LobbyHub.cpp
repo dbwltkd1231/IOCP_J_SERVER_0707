@@ -28,14 +28,15 @@ namespace LobbyServer
 		(
 			Network::SenderType::LOBBY_SERVER,
 			overlappedQueueMax,
-			[this](ULONG_PTR key, Network::CustomOverlapped* overlapped) {this->ReceiveMessage(key, overlapped);}
+			[this](ULONG_PTR completionKey, Network::CustomOverlapped* overlapped) {this->ProcessIocp(completionKey, overlapped);},
+			[this](ULONG_PTR completionKey) {this->ProcessDisconnect(completionKey);}
 		);
 
 		_networkManager.SetupListenSocket(_lobbyPort, _preparedSocketMax, _icopThreadCount);
 
 		for (int i = 0;i < _preparedSocketMax;++i)
 		{
-			_networkManager.PrepareAcceptSocket();
+			_networkManager.PrepareAcceptSocket(Network::SenderType::CLIENT);
 		}
 
 		_packetQueue.Construct(_packetQueueCapacity);
@@ -77,21 +78,60 @@ namespace LobbyServer
 
 	void LobbyHub::ConnectControlServer()
 	{
-		_networkManager.SetupConnectSocket(_controlServerIp, _controlServerPort);
+		_networkManager.SetupConnectSocket(_controlServerIp, _controlServerPort, Network::SenderType::CONTROL_SERVER);
 	}
 
-	void LobbyHub::ReceiveMessage(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped)
+	void LobbyHub::ProcessIocp(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped)
 	{
-		Network::MessageHeader* receivedHeader = reinterpret_cast<Network::MessageHeader*>(overlapped->Wsabuf[0].buf);
-		std::shared_ptr<Network::Packet> packet = std::make_shared< Network::Packet>();
+		Network::OperationType operationType = overlapped->GetOperation();
 
-		int bodySize = ntohl(receivedHeader->BodySize);
+		switch (operationType)
+		{
+			case Network::OperationType::OP_ACCEPT:
+			{
+				Network::SenderType senderType = overlapped->GetSenderType();
 
-		packet->CompletionKey = completionKey;
-		packet->ContentsType = ntohl(receivedHeader->ContentsType);
-		packet->Buffer = std::string(overlapped->Wsabuf[1].buf, bodySize);// string 값복사 전달을 통해 buffer초기화시에도 안정성을 강화.
+				break;
+			}
 
-		_packetQueue.push(std::move(packet));
+			case Network::OperationType::OP_CONNECT:
+			{
+				Network::SenderType senderType = overlapped->GetSenderType();
+
+				break;
+			}
+
+			case Network::OperationType::OP_RECV:
+			{
+				Network::MessageHeader* receivedHeader = reinterpret_cast<Network::MessageHeader*>(overlapped->Wsabuf[0].buf);
+				std::shared_ptr<Network::Packet> packet = std::make_shared< Network::Packet>();
+
+				int bodySize = ntohl(receivedHeader->BodySize);
+
+				packet->CompletionKey = completionKey;
+				packet->SenderType = ntohl(receivedHeader->SenderType);
+				packet->ContentsType = ntohl(receivedHeader->ContentsType);
+				packet->Buffer = std::string(overlapped->Wsabuf[1].buf, bodySize);// string 값복사 전달을 통해 buffer초기화시에도 안정성을 강화.
+
+				_packetQueue.push(std::move(packet));
+				break;
+			}
+
+			case Network::OperationType::OP_SEND:
+			{
+				break;
+			}
+
+			case Network::OperationType::OP_DEFAULT:
+			{
+				break;
+			}
+		}
+	}
+
+	void LobbyHub::ProcessDisconnect(ULONG_PTR completionKey)
+	{
+
 	}
 
 	void LobbyHub::RequestSendMessage(Protocol::JobOutput output)

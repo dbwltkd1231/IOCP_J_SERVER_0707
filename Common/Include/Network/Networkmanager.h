@@ -21,10 +21,10 @@ namespace Network
 		NetworkManager();
 		~NetworkManager();
 
-		void Construct(Network::SenderType senderType, int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> receiveCallback);
+		void Construct(Network::SenderType senderType, int overlappedQueueMax, std::function<void(ULONG_PTR, CustomOverlapped*)> iocpCallback, std::function<void(ULONG_PTR)> disconnectCallback);
 		void SetupListenSocket(int serverPort, int prepareSocketMax, int iocpThreadCount);
-		void PrepareAcceptSocket();
-		void SetupConnectSocket(std::string targetServerIp, int targetServerPort);
+		void PrepareAcceptSocket(Network::SenderType senderType);
+		void SetupConnectSocket(std::string targetServerIp, int targetServerPort, Network::SenderType senderType);
 		int GetCurrentAcceptedSocket();
 		void ProcessCompletionHandler();
 
@@ -35,23 +35,22 @@ namespace Network
 		bool CallReceiveReady(SOCKET* targetSocket);
 		bool ProcessDisconnect(SOCKET* targetSocket);
 
-		void HandleConnectComplete();
+		void HandleAcceptComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped);
+		void HandleConnectComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped);
 		void HandleDisconnectComplete(ULONG_PTR key, std::string error);
-		void HandleAcceptComplete(ULONG_PTR key);
 		void HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes);
 		void HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped);
 
 		HANDLE _iocp = INVALID_HANDLE_VALUE;
 		SOCKET* _listenSocket;
-		SOCKET* _connectSocket;
 		LPFN_ACCEPTEX _acceptExPointer = nullptr;
 
 		Utility::LockFreeCircleQueue<Network::CustomOverlapped*> _overlappedQueue;
-		tbb::concurrent_map<ULONG_PTR, SOCKET*> _preparedSocketMap;
 		Utility::LockFreeCircleQueue<SOCKET*> _preparedSocketQueue;
-		tbb::concurrent_map<ULONG_PTR, SOCKET*> _accpetCompletedSocketMap;
+		tbb::concurrent_map<ULONG_PTR, SOCKET*> _connectedSocketMap;
 
-		std::function<void(ULONG_PTR, CustomOverlapped*)> _receiveCallback;
+		std::function<void(ULONG_PTR)> _disconnectCallback;
+		std::function<void(ULONG_PTR, CustomOverlapped*)> _iocpCallback;
 
 		Network::SenderType _senderType;
 

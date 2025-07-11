@@ -6,9 +6,10 @@ namespace Network
 {
 	CustomOverlapped::CustomOverlapped()
 	{
-		_socketPtr = 0;
 		_operationType = OperationType::OP_DEFAULT;
+		_senderType = Network::SenderType::DEFAULT;
 		this->hEvent = NULL;
+		_socket = nullptr;
 
 		Wsabuf[0].buf = new char[sizeof(MessageHeader)];
 		Wsabuf[0].len = sizeof(MessageHeader);
@@ -19,8 +20,8 @@ namespace Network
 
 	CustomOverlapped::~CustomOverlapped()
 	{
-		_socketPtr = 0;
 		_operationType = OperationType::OP_DEFAULT;
+		_senderType = Network::SenderType::DEFAULT;
 		this->hEvent = NULL;
 
 		delete[] Wsabuf[0].buf;
@@ -32,7 +33,6 @@ namespace Network
 
 	CustomOverlapped::CustomOverlapped(const CustomOverlapped& other)
 	{
-		_socketPtr = other._socketPtr;
 		this->hEvent = other.hEvent;
 		_operationType = other._operationType;
 
@@ -60,20 +60,23 @@ namespace Network
 
 	}
 
-	void CustomOverlapped::ConnectSetting(ULONG_PTR socketPtr)
+	void CustomOverlapped::ConnectSetting(SOCKET* socket, Network::SenderType senderType)
 	{
 		_operationType = Network::OperationType::OP_CONNECT;
-		_socketPtr = socketPtr;
+		_socket = socket;
+		_senderType = senderType;
 	}
 
-	void CustomOverlapped::AcceptSetting(ULONG_PTR socketPtr)
+	void CustomOverlapped::AcceptSetting(SOCKET* socket, Network::SenderType senderType)
 	{
 		_operationType = Network::OperationType::OP_ACCEPT;
-		_socketPtr = socketPtr;
+		_socket = socket;
+		_senderType = senderType;
 	}
 
-	void CustomOverlapped::SendSetting(const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen)
+	void CustomOverlapped::SendSetting(SOCKET* socket, const MessageHeader& headerData, const char* bodyBuffer, ULONG bodyLen)
 	{
+		_socket = socket;
 		_operationType = Network::OperationType::OP_SEND;
 
 		memset(Wsabuf[0].buf, 0, Wsabuf[0].len);
@@ -87,9 +90,10 @@ namespace Network
 		Wsabuf[1].len = bodyLen;
 	}
 
-	void CustomOverlapped::ReceiveSetting()
+	void CustomOverlapped::ReceiveSetting(SOCKET* socket)
 	{
 		_operationType = Network::OperationType::OP_RECV;
+		_socket = socket;
 	}
 
 	OperationType CustomOverlapped::GetOperation() const
@@ -97,9 +101,14 @@ namespace Network
 		return _operationType;
 	}
 
-	ULONG_PTR CustomOverlapped::GetKey() const
+	Network::SenderType CustomOverlapped::GetSenderType() const
 	{
-		return _socketPtr;
+		return _senderType;
+	}
+
+	SOCKET* CustomOverlapped::GetSocketPtr() const
+	{
+		return _socket;
 	}
 
 	void CustomOverlapped::Clear()
@@ -110,7 +119,8 @@ namespace Network
 		Wsabuf[1].len = BUFFER_SIZE_MAX;
 
 		_operationType = OperationType::OP_DEFAULT;
-		_socketPtr = 0;
+		_senderType = Network::SenderType::DEFAULT;
+		_socket = nullptr;
 		this->hEvent = NULL;
 	}
 }
