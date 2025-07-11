@@ -31,6 +31,9 @@
     <ClCompile Include="..\Common\Src\Protocol\LobbyServerProtocol.cpp">
       <Filter>Protocol</Filter>
     </ClCompile>
+    <ClCompile Include="Src\LobbyMonitor.cpp">
+      <Filter>Business</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Include\Network\BasicData.h">
@@ -56,6 +59,9 @@
     </ClInclude>
     <ClInclude Include="..\Common\Include\Protocol\LobbyServerProtocol.h">
       <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\LobbyMonitor.h">
+      <Filter>Business</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

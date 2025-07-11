@@ -35,11 +35,11 @@ namespace Network
 		bool CallReceiveReady(SOCKET* targetSocket);
 		bool ProcessDisconnect(SOCKET* targetSocket);
 
-		void HandleAcceptComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped);
-		void HandleConnectComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped);
-		void HandleDisconnectComplete(ULONG_PTR key, std::string error);
-		void HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes);
-		void HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped);
+		void HandleAcceptComplete(CustomOverlapped* overlapped);
+		void HandleConnectComplete(CustomOverlapped* overlapped);
+		void HandleDisconnectComplete(ULONG_PTR completionKey, std::string error);
+		void HandleReceiveComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped, DWORD bytes);
+		void HandleSendComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped);
 
 		HANDLE _iocp = INVALID_HANDLE_VALUE;
 		SOCKET* _listenSocket;

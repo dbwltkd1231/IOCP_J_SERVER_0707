@@ -25,6 +25,7 @@
     <ClCompile Include="..\Common\Src\Utility\Debug.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Src\LobbyHub.cpp" />
+    <ClCompile Include="Src\LobbyMonitor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\Common\Include\Network\BasicData.h" />
@@ -35,6 +36,7 @@
     <ClInclude Include="..\Common\Include\Utility\Debug.h" />
     <ClInclude Include="..\Common\Include\Utility\LockFreeCircleQueue.h" />
     <ClInclude Include="Include\LobbyHub.h" />
+    <ClInclude Include="Include\LobbyMonitor.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>17.0</VCProjectVersion>

@@ -5,6 +5,7 @@
 #include <queue>
 #include <vector>
 
+#include "LobbyMonitor.h"
 #include "../Network/Networkmanager.h"
 #include "../Protocol/LobbyServerProtocol.h"
 
@@ -24,6 +25,7 @@ namespace LobbyServer
 		void ConnectControlServer();
 	private:
 		Network::NetworkManager _networkManager;
+		LobbyServer::LobbyMonitor _lobbyMonitor;
 
 		bool isOn;
 		
@@ -34,11 +36,10 @@ namespace LobbyServer
 		int _accpetexSocketMax;
 		int _overlappedQueueMax;
 		int _packetQueueCapacity;
-		int _lobbyCapacity;
 
 		std::string _controlServerIp;
 		int _controlServerPort;
-
+		ULONG_PTR _controlServerCompletionKey;
 
 
 		void ProcessIocp(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped);

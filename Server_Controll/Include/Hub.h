@@ -8,6 +8,7 @@
 #include "../Network/Networkmanager.h"
 #include "LobbyManager.h"
 #include "../Protocol/ControlServerProtocol.h"
+//#include "oneapi/tbb/concurrent_queue.h"
 
 namespace ControlServer
 {
@@ -38,8 +39,10 @@ namespace ControlServer
 		ControlServer::LobbyManager _lobbyManager;
 
 		Utility::LockFreeCircleQueue<std::shared_ptr <Network::Packet>> _packetQueue;
-
+		//tbb::concurrent_queue<std::shared_ptr<Network::Packet>>_packetQueue;
+		//tbb::concurrent_queue<std::shared_ptr<Protocol::Job>>_jobQueue;
 		Utility::LockFreeCircleQueue<std::shared_ptr<Protocol::Job>> _jobQueue;
+
 		std::condition_variable _jobThreadConditionValue;
 		std::mutex _lockJobThread;
 

@@ -6,11 +6,13 @@ namespace LobbyServer
 	LobbyHub::LobbyHub()
 	{
 		isOn = false;
+		_controlServerCompletionKey = 0;
 	}
 
 	LobbyHub::~LobbyHub()
 	{
 		isOn = false;
+		_controlServerCompletionKey = 0;
 	}
 
 	void LobbyHub::Construct(std::string lobbyKey, int lobbyPort, int iocpThreadCount, int preparedSocketMax, int acceptexSocketMax, int overlappedQueueMax, int packetQueueCapacity, int lobbyCapacity)
@@ -22,7 +24,9 @@ namespace LobbyServer
 		_accpetexSocketMax = acceptexSocketMax;
 		_overlappedQueueMax = overlappedQueueMax;
 		_packetQueueCapacity = packetQueueCapacity;
-		_lobbyCapacity = lobbyCapacity;
+
+		_lobbyMonitor.Construct(lobbyCapacity);
+		_jobQueue.Construct(overlappedQueueMax);//TODO
 
 		_networkManager.Construct
 		(
@@ -42,6 +46,18 @@ namespace LobbyServer
 		_packetQueue.Construct(_packetQueueCapacity);
 
 		isOn = true;
+
+		std::string log =
+			"LobbyKey: " + _lobbyKey +
+			", LobbyPort: " + std::to_string(_lobbyPort) +
+			", IOCPThreadCount: " + std::to_string(_icopThreadCount) +
+			", PreparedSocketMax: " + std::to_string(_preparedSocketMax) +
+			", AcceptExSocketMax: " + std::to_string(_accpetexSocketMax) +
+			", OverlappedQueueMax: " + std::to_string(_overlappedQueueMax) +
+			", PacketQueueCapacity: " + std::to_string(_packetQueueCapacity) +
+			", LobbyCapacity: " + std::to_string(lobbyCapacity);
+
+		Utility::Log("LobbyHub", "Construct", log);
 	}
 
 	void LobbyHub::InitializeSubThread(int receiveThreadCount, int jobThreadCount)
@@ -60,10 +76,19 @@ namespace LobbyServer
 
 		std::thread networkThread([this]() { this->_networkManager.ProcessCompletionHandler(); });
 		networkThread.detach();
+
+		std::string log =
+			"ReceiveThreadCount: " + std::to_string(receiveThreadCount) +
+			", JobThreadCount: " + std::to_string(jobThreadCount) +
+			" Completed";
+
+		Utility::Log("LobbyHub", "InitializeSubThread", log);
 	}
 
 	void LobbyHub::Start()
 	{
+		Utility::Log("LobbyHub", "Start", (isOn ? "On" : "OFF"));
+
 		while (isOn)
 		{
 
@@ -84,19 +109,45 @@ namespace LobbyServer
 	void LobbyHub::ProcessIocp(ULONG_PTR completionKey, Network::CustomOverlapped* overlapped)
 	{
 		Network::OperationType operationType = overlapped->GetOperation();
+		Network::SenderType senderType = Network::SenderType::DEFAULT;
 
 		switch (operationType)
 		{
 			case Network::OperationType::OP_ACCEPT:
 			{
-				Network::SenderType senderType = overlapped->GetSenderType();
+				senderType = overlapped->GetSenderType();
+
+				if (senderType == Network::SenderType::CLIENT)
+				{
+					Utility::Log("LobbyHub", "ProcessIocp", "Client Accept");
+					_lobbyMonitor.RegisterLobbyUser();
+				}
 
 				break;
 			}
 
 			case Network::OperationType::OP_CONNECT:
 			{
-				Network::SenderType senderType = overlapped->GetSenderType();
+				senderType = overlapped->GetSenderType();
+
+				if (senderType == Network::SenderType::CONTROL_SERVER)
+				{
+					_controlServerCompletionKey = completionKey;
+
+					std::string key = _lobbyKey;
+					int port = _lobbyPort;
+					bool active = isOn;
+					auto job = std::make_shared<Protocol::JOB_NOTICE_LOBBYREADY>(
+						_controlServerCompletionKey,
+						key,
+						port,
+						active
+					);
+
+					_jobQueue.push(std::move(job));
+					_jobThreadConditionValue.notify_one();
+					Utility::Log("LobbyHub", "ProcessIocp", "Control Server Connect");
+				}
 
 				break;
 			}
@@ -137,6 +188,7 @@ namespace LobbyServer
 	void LobbyHub::RequestSendMessage(Protocol::JobOutput output)
 	{
 		_networkManager.SendRequest(output.SocketPtr, output.ContentsType, output.Buffer, output.BodySize);
+		Utility::Log("LobbyHub","RequestSendMessage","Complete");
 	}
 
 	// 여러 쓰레드

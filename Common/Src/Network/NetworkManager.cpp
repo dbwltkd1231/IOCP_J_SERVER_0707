@@ -243,12 +243,12 @@ namespace Network
 				{
 					case OperationType::OP_CONNECT:
 					{
-						HandleConnectComplete(completionKey, overlapped);
+						HandleConnectComplete(overlapped);
 						break;
 					}
 					case OperationType::OP_ACCEPT:
 					{
-						HandleAcceptComplete(completionKey, overlapped); //- AcceptEx() 완료 시 IOCP로 들어오는 이벤트에서 completionKey는 리슨 소켓의 키가 들어온다.
+						HandleAcceptComplete(overlapped); //- AcceptEx() 완료 시 IOCP로 들어오는 이벤트에서 completionKey는 리슨 소켓의 키가 들어온다.
 						break;
 					}
 					case OperationType::OP_RECV:
@@ -266,8 +266,6 @@ namespace Network
 						Utility::Log("NetworkManager", "ProcessCompletionHandler", "Default Type Message");
 						break;
 					}
-
-					_iocpCallback(completionKey, overlapped);
 				}
 			}
 
@@ -361,44 +359,53 @@ namespace Network
 		return true;
 	}
 
-	void NetworkManager::HandleAcceptComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped)
+	void NetworkManager::HandleAcceptComplete(CustomOverlapped* overlapped)
 	{
 		SOCKET* targetSocket = overlapped->GetSocketPtr();
+		ULONG_PTR completionKey = (ULONG_PTR)targetSocket;
 		_connectedSocketMap.insert(std::make_pair(completionKey, targetSocket));
+
+		_iocpCallback(completionKey, overlapped);
 
 		bool result = CallReceiveReady(targetSocket);
 		std::string feedback = (result ? "Success" : "Fail");
 		Utility::Log("NetworkManager", "HandleAcceptComplete", "Success And ReceiveReady " + feedback);
 	}
 
-	void NetworkManager::HandleConnectComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped)
+	void NetworkManager::HandleConnectComplete(CustomOverlapped* overlapped)
 	{
 		SOCKET* targetSocket = overlapped->GetSocketPtr();
+		ULONG_PTR completionKey = (ULONG_PTR)targetSocket;
 		_connectedSocketMap.insert(std::make_pair(completionKey, targetSocket));
+
+		_iocpCallback(completionKey, overlapped);
 
 		bool result = CallReceiveReady(targetSocket);
 		std::string feedback = (result ? "Success" : "Fail");
 		Utility::Log("NetworkManager", "HandleConnectComplete", "Success And ReceiveReady " + feedback);
 	}
 
-	void NetworkManager::HandleReceiveComplete(ULONG_PTR key, CustomOverlapped* overlapped, DWORD bytes)
+	void NetworkManager::HandleReceiveComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped, DWORD bytes)
 	{
 		if (bytes <= 0)
 		{
 			Utility::Log("NetworkManager", "HandleReceiveComplete", "Recv 0 bytes ");
-			HandleDisconnectComplete(key, "WSARecv 0 bytes");
+			HandleDisconnectComplete(completionKey, "WSARecv 0 bytes");
 			return;
 		}
 
 		SOCKET* targetSokcet = overlapped->GetSocketPtr();
+
+		_iocpCallback(completionKey, overlapped);
 
 		bool result = CallReceiveReady(targetSokcet);
 		std::string feedback = (result ? "Success" : "Fail");
 		Utility::Log("NetworkManager", "HandleReceiveComplete", "Success And ReceiveReady " + feedback);
 	}
 
-	void NetworkManager::HandleSendComplete(ULONG_PTR key, CustomOverlapped* overlapped)
+	void NetworkManager::HandleSendComplete(ULONG_PTR completionKey, CustomOverlapped* overlapped)
 	{
+		_iocpCallback(completionKey, overlapped);
 		Utility::Log("NetworkManager", "HandleSendComplete", "메세지 송신 완료");
 	}
 

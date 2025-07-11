@@ -32,12 +32,24 @@ namespace ControlServer
 
 		for (int i = 0;i < prepareSocketMax;++i)
 		{
-			_networkManager.PrepareAcceptSocket(Network::SenderType::CLIENT);
+			_networkManager.PrepareAcceptSocket(Network::SenderType::DEFAULT);
 		}
 
 		_packetQueue.Construct(packetQueueCapacity);
+		_jobQueue.Construct(overlappedQueueMax);//TODO
 
 		isOn = true;
+
+		std::string log =
+			"IP: " + ip +
+			", ControlServerPort: " + std::to_string(serverPort) +
+			", IOCPThreadCount: " + std::to_string(prepareSocketMax) +
+			", IocpThreadCount: " + std::to_string(iocpThreadCount) +
+			", OverlappedQueueMax: " + std::to_string(overlappedQueueMax) +
+			", AcceptedCapacity: " + std::to_string(acceptedCapacity) +
+			", PacketQueueCapacity: " + std::to_string(packetQueueCapacity);
+
+		Utility::Log("Hub", "Construct", log);
 	}
 
 	void Hub::InitializeSubThread(int receiveThreadCount, int jobThreadCount)
@@ -56,10 +68,19 @@ namespace ControlServer
 
 		std::thread networkThread([this]() { this->_networkManager.ProcessCompletionHandler(); });
 		networkThread.detach();
+
+		std::string log =
+			"ReceiveThreadCount: " + std::to_string(receiveThreadCount) +
+			", JobThreadCount: " + std::to_string(jobThreadCount) +
+			" Completed";
+
+		Utility::Log("Hub", "InitializeSubThread", log);
 	}
 
 	void Hub::Start()
 	{
+		Utility::Log("Hub", "Start", (isOn? "On" : "OFF"));
+
 		while (isOn)
 		{
 
@@ -133,6 +154,8 @@ namespace ControlServer
 			{
 				Utility::Log("Hub", "LobbyServerStart", "Lobby 서버 실행 성공!");
 			}
+
+			Sleep(1000);
 		}
 
 		_currentLobbyCount += count;//실패해도 실패한대로 넘어간다.
@@ -215,6 +238,8 @@ namespace ControlServer
 
 			while (!_jobQueue.empty())
 			{
+				//std::shared_ptr< Protocol::Job>job = nullptr;
+				//_jobQueue.try_pop(job);
 				auto job = _jobQueue.pop();
 
 				job->Execute(output);
@@ -236,7 +261,11 @@ namespace ControlServer
 			if (_packetQueue.empty())
 				continue;
 
-			std::shared_ptr<Network::Packet> packet = _packetQueue.pop();
+			//std::shared_ptr<Network::Packet> packet;
+			//_packetQueue.try_pop(packet);
+
+			auto packet = _packetQueue.pop();
+
 			protocol::MESSAGETYPE messageType = static_cast<protocol::MESSAGETYPE>(packet->ContentsType);
 			Network::SenderType sender = static_cast<Network::SenderType>(packet->SenderType);
 
@@ -278,6 +307,8 @@ namespace ControlServer
 					);
 
 					_jobQueue.push(std::move(job));
+
+					Utility::Log("Hub", "MESSAGETYPE_NOTICE_LOBBYREADY", "Recv");
 
 					break;
 				}
