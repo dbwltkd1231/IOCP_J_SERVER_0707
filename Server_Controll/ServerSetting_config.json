@@ -1,9 +1,17 @@
 {
+    "AuthServer": {
+        "AcceptSocketMax": 30,
+        "Keys": "Auth",
+        "OverlappedQueueSizemax": 100,
+        "Ports": 9090,
+        "PreCreateSocketCount": 10,
+        "ThreadCount": 10
+    },
     "ControlServer": {
         "AcceptSocketMax": 30,
         "IP": "127.0.0.1",
         "OverlappedQueueSizemax": 100,
-        "Port": 9090,
+        "Port": 9080,
         "PreCreateSocketCount": 10,
         "ThreadCount": 10
     },
@@ -22,5 +30,8 @@
         ],
         "PreCreateSocketCount": 10,
         "ThreadCount": 10
+    },
+    "REDIS": {
+        "PORT": 6379
     }
 }

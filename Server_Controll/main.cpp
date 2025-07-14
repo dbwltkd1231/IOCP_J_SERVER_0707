@@ -34,6 +34,13 @@ int main()
     int lobbyAcceptSocketMax = config["LobbyServer"]["AcceptSocketMax"];
     int lobbyOverlappedQueueSizemax = config["LobbyServer"]["OverlappedQueueSizemax"];
 
+    std::string authKey = config["AuthServer"]["Keys"];
+    int authPort = config["AuthServer"]["Ports"];
+    int authThreadCount = config["AuthServer"]["ThreadCount"];
+    int authPreCreateSocketCount = config["AuthServer"]["PreCreateSocketCount"];
+    int authAcceptSocketMax = config["AuthServer"]["AcceptSocketMax"];
+    int authOverlappedQueueSizemax = config["AuthServer"]["OverlappedQueueSizemax"];
+
     ControlServer::Hub hub;
     hub.Construct(controlIP, controlPort, 6379, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax, 100);
     hub.InitializeSubThread(1, 5);

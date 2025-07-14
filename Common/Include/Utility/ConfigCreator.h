@@ -11,11 +11,18 @@ namespace Utility
 		nlohmann::json config;
 
 		config["ControlServer"]["IP"] = "127.0.0.1";
-		config["ControlServer"]["Port"] = 9090;
+		config["ControlServer"]["Port"] = 9080;
 		config["ControlServer"]["ThreadCount"] = 10;
 		config["ControlServer"]["PreCreateSocketCount"] = 10;
 		config["ControlServer"]["AcceptSocketMax"] = 30;
 		config["ControlServer"]["OverlappedQueueSizemax"] = 100;
+
+		config["AuthServer"]["Keys"] = "Auth";
+		config["AuthServer"]["Ports"] = 9090;
+		config["AuthServer"]["ThreadCount"] = 10;
+		config["AuthServer"]["PreCreateSocketCount"] = 10;
+		config["AuthServer"]["AcceptSocketMax"] = 30;
+		config["AuthServer"]["OverlappedQueueSizemax"] = 100;
 
 		config["REDIS"]["PORT"] = 6379;
 
@@ -25,6 +32,7 @@ namespace Utility
 		config["LobbyServer"]["PreCreateSocketCount"] = 10;
 		config["LobbyServer"]["AcceptSocketMax"] = 30;
 		config["LobbyServer"]["OverlappedQueueSizemax"] = 100;
+
 
 		std::ofstream file(fileName);
 		file << config.dump(4);  // 4는 들여쓰기 수준
