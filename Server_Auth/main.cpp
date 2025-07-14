@@ -35,7 +35,7 @@ int main(int argc, char* argv[])
 	else
 	{
 		serverKey = "Auth";
-		serverPort = 9080;
+		serverPort = 9090;
 		threadCount = 10;
 		preCreateSocketCount = 10;
 		acceptSocketMax = 10;

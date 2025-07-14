@@ -16,5 +16,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="Src\AuthHub.cpp">
+      <Filter>Business</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\AuthHub.h">
+      <Filter>Business</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
