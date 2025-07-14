@@ -33,6 +33,11 @@ namespace LobbyServer
 		_remainCapacity.fetch_add(1, std::memory_order_acq_rel);
 	}
 
+	int LobbyMonitor::GetCapacity()
+	{
+		return _capacity;
+	}
+
 	int LobbyMonitor::GetCurrentUser()
 	{
 		return _currentUser.load(std::memory_order_acquire);

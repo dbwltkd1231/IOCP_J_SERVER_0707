@@ -36,11 +36,12 @@ namespace Protocol
 
 	////////////
 
-	JOB_NOTICE_LOBBYREADY::JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string lobbyKey, int port, bool active, std::function<void(std::string& key, int& port, bool success)> saveLobbyInfo)
+	JOB_NOTICE_LOBBYREADY::JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string lobbyKey, int port, int capacity, bool active, std::function<void(std::string& key, int& port, int& capacity, bool success)> saveLobbyInfo)
 	{
 		SocketPtr = socketPtr;
 		_lobbyKey = lobbyKey;
 		_port = port;
+		_capacity = capacity;
 		_active = active;
 
 		_saveLobbyInfo = saveLobbyInfo;
@@ -53,7 +54,7 @@ namespace Protocol
 
 	void JOB_NOTICE_LOBBYREADY::Execute(JobOutput& output)
 	{
-		_saveLobbyInfo(_lobbyKey, _port, _active);
+		_saveLobbyInfo(_lobbyKey, _port, _capacity, _active);
 		output.IsSend = false;
 	}
 

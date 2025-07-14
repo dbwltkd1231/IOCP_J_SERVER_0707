@@ -54,14 +54,14 @@
     <ClInclude Include="..\Common\Include\Protocol\Job.h">
       <Filter>Protocol</Filter>
     </ClInclude>
-    <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h">
-      <Filter>Protocol</Filter>
-    </ClInclude>
     <ClInclude Include="..\Common\Include\Protocol\LobbyServerProtocol.h">
       <Filter>Protocol</Filter>
     </ClInclude>
     <ClInclude Include="Include\LobbyMonitor.h">
       <Filter>Business</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h">
+      <Filter>Protocol</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>

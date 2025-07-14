@@ -129,13 +129,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)Common\Include\Network;$(ProjectDir)Include;$(SolutionDir)Common\Include\Utility;$(SolutionDir)Common\Include\Protocol;$(SolutionDir)Common\Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)Common\Include\Network;$(ProjectDir)Include;$(SolutionDir)Common\Include\Utility;$(SolutionDir)Common\Include\Protocol;$(SolutionDir)Common\Library;$(SolutionDir)Common\Library\hiredis\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Utility;$(SolutionDir)Common\Src\Network;$(SolutionDir)Common\Src\Protocol;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Utility;$(SolutionDir)Common\Src\Network;$(SolutionDir)Common\Src\Protocol;$(SolutionDir)Common\Library\hiredis\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">

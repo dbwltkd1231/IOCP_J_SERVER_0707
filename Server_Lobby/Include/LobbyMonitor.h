@@ -12,7 +12,7 @@ namespace LobbyServer
 		void Construct(int capacity);
 		void RegisterLobbyUser();
 		void UnregisterLobbyUser();
-
+		int GetCapacity();
 		int GetCurrentUser();
 		int GetRemainCapacity();
 	private:

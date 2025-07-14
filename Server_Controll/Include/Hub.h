@@ -8,6 +8,8 @@
 #include "../Network/Networkmanager.h"
 #include "LobbyManager.h"
 #include "../Protocol/ControlServerProtocol.h"
+#include "../Database/RedisWorker.h"
+
 //#include "oneapi/tbb/concurrent_queue.h"
 
 namespace ControlServer
@@ -18,7 +20,8 @@ namespace ControlServer
 		Hub();
 		~Hub();
 
-		void Construct(std::string ip, int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity);
+		void Construct(std::string ip, int serverPort, int redisPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity);
+		
 		void InitializeSubThread(int receiveThreadCount, int jobThreadCount);
 		void Start();
 
@@ -26,6 +29,8 @@ namespace ControlServer
 		void LobbyServerStart(int count);
 	private:
 		Network::NetworkManager _networkManager;
+		Database::RedisWorker* _redisWorker;
+		ControlServer::LobbyManager _lobbyManager;
 
 		bool isOn;
 		int _acceptedCapacity;
@@ -35,8 +40,6 @@ namespace ControlServer
 		void RequestSendMessage(Protocol::JobOutput output);
 		void ReceiveThread();
 		void JobThread();
-
-		ControlServer::LobbyManager _lobbyManager;
 
 		Utility::LockFreeCircleQueue<std::shared_ptr <Network::Packet>> _packetQueue;
 		//tbb::concurrent_queue<std::shared_ptr<Network::Packet>>_packetQueue;

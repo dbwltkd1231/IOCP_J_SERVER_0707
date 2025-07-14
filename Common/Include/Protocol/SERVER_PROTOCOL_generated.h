@@ -269,13 +269,17 @@ struct NOTICE_LOBBYREADY FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table 
   enum FlatBuffersVTableOffset FLATBUFFERS_VTABLE_UNDERLYING_TYPE {
     VT_LOBBY_KEY = 4,
     VT_PORT = 6,
-    VT_ACTIVE = 8
+    VT_CAPACITY = 8,
+    VT_ACTIVE = 10
   };
   const ::flatbuffers::String *lobby_key() const {
     return GetPointer<const ::flatbuffers::String *>(VT_LOBBY_KEY);
   }
   int32_t port() const {
     return GetField<int32_t>(VT_PORT, 0);
+  }
+  int32_t capacity() const {
+    return GetField<int32_t>(VT_CAPACITY, 0);
   }
   bool active() const {
     return GetField<uint8_t>(VT_ACTIVE, 0) != 0;
@@ -285,6 +289,7 @@ struct NOTICE_LOBBYREADY FLATBUFFERS_FINAL_CLASS : private ::flatbuffers::Table 
            VerifyOffset(verifier, VT_LOBBY_KEY) &&
            verifier.VerifyString(lobby_key()) &&
            VerifyField<int32_t>(verifier, VT_PORT, 4) &&
+           VerifyField<int32_t>(verifier, VT_CAPACITY, 4) &&
            VerifyField<uint8_t>(verifier, VT_ACTIVE, 1) &&
            verifier.EndTable();
   }
@@ -299,6 +304,9 @@ struct NOTICE_LOBBYREADYBuilder {
   }
   void add_port(int32_t port) {
     fbb_.AddElement<int32_t>(NOTICE_LOBBYREADY::VT_PORT, port, 0);
+  }
+  void add_capacity(int32_t capacity) {
+    fbb_.AddElement<int32_t>(NOTICE_LOBBYREADY::VT_CAPACITY, capacity, 0);
   }
   void add_active(bool active) {
     fbb_.AddElement<uint8_t>(NOTICE_LOBBYREADY::VT_ACTIVE, static_cast<uint8_t>(active), 0);
@@ -318,8 +326,10 @@ inline ::flatbuffers::Offset<NOTICE_LOBBYREADY> CreateNOTICE_LOBBYREADY(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     ::flatbuffers::Offset<::flatbuffers::String> lobby_key = 0,
     int32_t port = 0,
+    int32_t capacity = 0,
     bool active = false) {
   NOTICE_LOBBYREADYBuilder builder_(_fbb);
+  builder_.add_capacity(capacity);
   builder_.add_port(port);
   builder_.add_lobby_key(lobby_key);
   builder_.add_active(active);
@@ -330,12 +340,14 @@ inline ::flatbuffers::Offset<NOTICE_LOBBYREADY> CreateNOTICE_LOBBYREADYDirect(
     ::flatbuffers::FlatBufferBuilder &_fbb,
     const char *lobby_key = nullptr,
     int32_t port = 0,
+    int32_t capacity = 0,
     bool active = false) {
   auto lobby_key__ = lobby_key ? _fbb.CreateString(lobby_key) : 0;
   return protocol::CreateNOTICE_LOBBYREADY(
       _fbb,
       lobby_key__,
       port,
+      capacity,
       active);
 }
 

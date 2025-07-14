@@ -2,11 +2,12 @@
 #include "../Utility/Debug.h"
 namespace Protocol
 {
-	JOB_NOTICE_LOBBYREADY::JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string key, int port, bool active)
+	JOB_NOTICE_LOBBYREADY::JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string key, int port, int capacity, bool active)
 	{
 		SocketPtr = socketPtr;
 		_key = key;
 		_port = port;
+		_capacity = capacity;
 		_active = active;
 	}
 
@@ -19,7 +20,7 @@ namespace Protocol
 	{
 		flatbuffers::FlatBufferBuilder builder;
 		auto lobbyKeyOffset = builder.CreateString(_key);
-		auto noticeLobbyReady = protocol::CreateNOTICE_LOBBYREADY(builder, lobbyKeyOffset, _port, _active);
+		auto noticeLobbyReady = protocol::CreateNOTICE_LOBBYREADY(builder, lobbyKeyOffset, _port, _capacity, _active);
 		builder.Finish(noticeLobbyReady);
 
 		output.BodySize = static_cast<int>(builder.GetSize());

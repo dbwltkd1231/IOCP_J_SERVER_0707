@@ -109,13 +109,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDir)Common\Include\Network;$(SolutionDir)Common\Include\Utility;$(SolutionDir)Common\Library;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Include;$(SolutionDir)Common\Include\Network;$(SolutionDir)Common\Include\Utility;$(SolutionDir)Common\Library;$(SolutionDir)Common\Include\Database;$(SolutionDir)Common\Library\hiredis\include;$(SolutionDir)Common\Include\Json;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
-      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Network;$(SolutionDir)Common\Src\Utility;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>ws2_32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(ProjectDir)Src;$(SolutionDir)Common\Src\Network;$(SolutionDir)Common\Src\Utility;$(SolutionDir)Common\Src\Database;$(SolutionDir)Common\Library\hiredis\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ws2_32.lib;hiredis.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -135,6 +135,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="..\Common\Src\Database\RedisWorker.cpp" />
     <ClCompile Include="..\Common\Src\Network\BasicData.cpp" />
     <ClCompile Include="..\Common\Src\Network\NetworkManager.cpp" />
     <ClCompile Include="..\Common\Src\Protocol\ControlServerProtocol.cpp" />
@@ -144,6 +145,8 @@
     <ClCompile Include="Src\LobbyManager.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="..\Common\Include\Database\RedisWorker.h" />
+    <ClInclude Include="..\Common\Include\Json\JsonData.h" />
     <ClInclude Include="..\Common\Include\Network\BasicData.h" />
     <ClInclude Include="..\Common\Include\Network\Networkmanager.h" />
     <ClInclude Include="..\Common\Include\Protocol\ControlServerProtocol.h" />

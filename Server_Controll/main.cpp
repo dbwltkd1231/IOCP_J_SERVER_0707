@@ -24,6 +24,8 @@ int main()
     int controlAcceptSocketMax = config["ControlServer"]["AcceptSocketMax"];
     int controlOverlappedQueueSizemax = config["ControlServer"]["OverlappedQueueSizemax"];
 
+    //int redisPort = config["REDIS"]["PORT"];
+     
     // LobbyServer 배열 값 불러오기
     std::vector<std::string> lobbyKeys = config["LobbyServer"]["Keys"].get<std::vector<std::string>>();
     std::vector<int> lobbyPorts = config["LobbyServer"]["Ports"].get<std::vector<int>>();
@@ -33,7 +35,7 @@ int main()
     int lobbyOverlappedQueueSizemax = config["LobbyServer"]["OverlappedQueueSizemax"];
 
     ControlServer::Hub hub;
-    hub.Construct(controlIP, controlPort, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax, 100);
+    hub.Construct(controlIP, controlPort, 6379, controlPreCreateSocketCount, controlThreadCount, controlOverlappedQueueSizemax, controlAcceptSocketMax, 100);
     hub.InitializeSubThread(1, 5);
 
     hub.LobbySeverInfoSetting(lobbyKeys, lobbyPorts, lobbyThreadCount, lobbyPreCreateSocketCount, lobbyAcceptSocketMax, lobbyOverlappedQueueSizemax);

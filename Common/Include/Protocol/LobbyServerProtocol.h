@@ -8,7 +8,7 @@ namespace Protocol
 	class JOB_NOTICE_LOBBYREADY : public Job
 	{
 	public:
-		JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string key, int port, bool active);
+		JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string key, int port, int capacity, bool active);
 		~JOB_NOTICE_LOBBYREADY() override;
 
 		void Execute(JobOutput& output) override;
@@ -16,6 +16,7 @@ namespace Protocol
 	private:
 		std::string _key;
 		int _port;
+		int _capacity;
 		bool _active;
 
 	};

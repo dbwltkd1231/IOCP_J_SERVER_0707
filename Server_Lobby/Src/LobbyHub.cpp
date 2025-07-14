@@ -153,11 +153,13 @@ namespace LobbyServer
 
 					std::string key = _lobbyKey;
 					int port = _lobbyPort;
+					int capacity = _lobbyMonitor.GetCapacity();
 					bool active = isOn;
 					auto job = std::make_shared<Protocol::JOB_NOTICE_LOBBYREADY>(
 						_controlServerCompletionKey,
 						key,
 						port,
+						capacity,
 						active
 					);
 

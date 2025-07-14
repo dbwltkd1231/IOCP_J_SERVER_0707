@@ -17,6 +17,8 @@ namespace Utility
 		config["ControlServer"]["AcceptSocketMax"] = 30;
 		config["ControlServer"]["OverlappedQueueSizemax"] = 100;
 
+		config["REDIS"]["PORT"] = 6379;
+
 		config["LobbyServer"]["Keys"] = nlohmann::json::array({ "Lobby1", "Lobby2", "Lobby3"});
 		config["LobbyServer"]["Ports"] = nlohmann::json::array({ 9091, 9092, 9093 });
 		config["LobbyServer"]["ThreadCount"] = 10;

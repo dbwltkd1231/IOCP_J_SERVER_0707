@@ -20,16 +20,17 @@ namespace Protocol
 	class JOB_NOTICE_LOBBYREADY : public Job
 	{
 	public:
-		JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string lobbyKey, int port, bool active, std::function<void(std::string& key, int& port, bool success)> saveLobbyInfo);
+		JOB_NOTICE_LOBBYREADY(ULONG_PTR socketPtr, std::string lobbyKey, int port, int capacity, bool active, std::function<void(std::string& key, int& port, int& capacity, bool success)> saveLobbyInfo);
 		~JOB_NOTICE_LOBBYREADY() override;
 
 		void Execute(JobOutput& output) override;
 
 	private:
-		std::function<void(std::string& key, int& port, bool& success)> _saveLobbyInfo;
+		std::function<void(std::string& key, int& port, int& capacity, bool& success)> _saveLobbyInfo;
 
 		std::string _lobbyKey;
 		int _port;
+		int _capacity;
 		bool _active;
 	};
 

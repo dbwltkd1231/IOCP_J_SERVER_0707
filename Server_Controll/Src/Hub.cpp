@@ -14,7 +14,7 @@ namespace ControlServer
 		isOn = false;
 	}
 
-	void Hub::Construct(std::string ip, int serverPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity)
+	void Hub::Construct(std::string ip, int serverPort, int redisPort, int prepareSocketMax, int iocpThreadCount, int overlappedQueueMax, int acceptedCapacity, int packetQueueCapacity)
 	{
 		_controlServerIp = ip;
 		_controlServerPort = serverPort;
@@ -38,8 +38,6 @@ namespace ControlServer
 		_packetQueue.Construct(packetQueueCapacity);
 		_jobQueue.Construct(overlappedQueueMax);//TODO
 
-		isOn = true;
-
 		std::string log =
 			"IP: " + ip +
 			", ControlServerPort: " + std::to_string(serverPort) +
@@ -49,7 +47,15 @@ namespace ControlServer
 			", AcceptedCapacity: " + std::to_string(acceptedCapacity) +
 			", PacketQueueCapacity: " + std::to_string(packetQueueCapacity);
 
+
+		_redisWorker = new Database::RedisWorker();
+		_redisWorker->Construct(ip, redisPort);
+		_lobbyManager.Construct(_redisWorker, 60);
+
+		isOn = true;
+
 		Utility::Log("Hub", "Construct", log);
+
 	}
 
 	void Hub::InitializeSubThread(int receiveThreadCount, int jobThreadCount)
@@ -296,14 +302,15 @@ namespace ControlServer
 					auto notice = flatbuffers::GetRoot<protocol::NOTICE_LOBBYREADY>(packet->Buffer.c_str());
 					std::string lobbyKey = notice->lobby_key()->str();
 					int port = notice->port();
+					int capacity = notice->capacity();
 					bool active = notice->active();
-
 					auto job = std::make_shared<Protocol::JOB_NOTICE_LOBBYREADY>(
 						packet->CompletionKey,
 						lobbyKey,
 						port,
+						capacity,
 						active,
-						[this](std::string& key, int& port, bool active) {this->_lobbyManager.SaveLobbyInfo(key, port, active);}
+						[this](std::string& key, int& port, int& capacity, bool active) {this->_lobbyManager.SaveLobbyInfo(key, port, capacity, active);}
 					);
 
 					_jobQueue.push(std::move(job));

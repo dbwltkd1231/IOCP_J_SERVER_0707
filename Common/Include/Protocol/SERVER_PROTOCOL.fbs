@@ -34,6 +34,7 @@ table NOTICE_LOBBYREADY
 {
     lobby_key : string;
     port : int32;
+    capacity : int32;
     active : bool;   
 }
 

@@ -20,6 +20,9 @@
     <ClCompile Include="Src\LobbyManager.cpp">
       <Filter>Business</Filter>
     </ClCompile>
+    <ClCompile Include="..\Common\Src\Database\RedisWorker.cpp">
+      <Filter>Database</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="Network">
@@ -33,6 +36,12 @@
     </Filter>
     <Filter Include="Protocol">
       <UniqueIdentifier>{e5103e00-ae5a-458e-805b-52372789b74c}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Database">
+      <UniqueIdentifier>{be2786d7-bdec-430e-ae7b-9f922df5f64f}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Json">
+      <UniqueIdentifier>{dd355f01-04f5-4913-aaa3-b06e72ee6b06}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
   <ItemGroup>
@@ -65,6 +74,12 @@
     </ClInclude>
     <ClInclude Include="..\Common\Include\Protocol\SERVER_PROTOCOL_generated.h">
       <Filter>Protocol</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Database\RedisWorker.h">
+      <Filter>Database</Filter>
+    </ClInclude>
+    <ClInclude Include="..\Common\Include\Json\JsonData.h">
+      <Filter>Json</Filter>
     </ClInclude>
   </ItemGroup>
 </Project>
